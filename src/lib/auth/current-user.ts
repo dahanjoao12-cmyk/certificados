@@ -36,6 +36,11 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     redirect("/login");
   }
 
+  if (!(profile as Profile).active) {
+    await supabase.auth.signOut();
+    redirect("/login");
+  }
+
   return { id: user.id, email: user.email ?? "", profile: profile as Profile };
 }
 
