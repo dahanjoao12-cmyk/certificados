@@ -11,9 +11,14 @@ export default function ImportPage() {
             Envie uma planilha de cadastro ou de certificados. Você escolhe o mapeamento das colunas no próximo passo.
           </p>
         </div>
-        <Link href="/importar/historico" className="text-sm text-slate-600 underline">
-          Histórico de importações
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/certificados/importar-pfx" className="text-sm text-slate-600 underline">
+            Processar certificado .pfx/.p12
+          </Link>
+          <Link href="/importar/historico" className="text-sm text-slate-600 underline">
+            Histórico de importações
+          </Link>
+        </div>
       </div>
 
       <ImportWizard />

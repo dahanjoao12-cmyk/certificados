@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit/log";
+import { insertCertificateForCompany } from "./create";
 import { certificateSchema, normalizeCertificateInput } from "./schema";
 
 export interface CertificateFormState {
@@ -58,52 +59,18 @@ export async function createCertificate(
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: previousCurrent } = await supabase
-    .from("certificates")
-    .select("id, valid_to")
-    .eq("company_id", companyId)
-    .eq("is_current", true)
-    .maybeSingle();
-
   const normalized = normalizeCertificateInput(parsed.data);
 
-  const { data: created, error } = await supabase
-    .from("certificates")
-    .insert({
-      ...normalized,
-      company_id: companyId,
-      is_current: true,
+  try {
+    await insertCertificateForCompany(supabase, {
+      companyId,
+      userId: user.id,
+      fields: normalized,
       origin: "manual",
-      created_by: user.id,
-    })
-    .select("id")
-    .single();
-
-  if (error) {
+    });
+  } catch {
     return { error: "Não foi possível salvar o certificado. Tente novamente." };
   }
-
-  const isRenewal = Boolean(previousCurrent);
-
-  await supabase.from("certificate_history").insert({
-    certificate_id: created.id,
-    company_id: companyId,
-    action: isRenewal ? "renewed" : "created",
-    field_changed: isRenewal ? "valid_to" : null,
-    old_value: previousCurrent?.valid_to ?? null,
-    new_value: normalized.valid_to,
-    changed_by: user.id,
-  });
-
-  await logAudit(supabase, {
-    userId: user.id,
-    action: isRenewal ? "renew_certificate" : "create_certificate",
-    entityType: "certificate",
-    entityId: created.id,
-    description: isRenewal
-      ? `renovou o certificado da empresa (novo vencimento ${normalized.valid_to})`
-      : `cadastrou um novo certificado (vencimento ${normalized.valid_to})`,
-  });
 
   revalidatePath(`/empresas/${companyId}`);
   redirect(`/empresas/${companyId}`);
