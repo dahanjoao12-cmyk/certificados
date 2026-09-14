@@ -7,6 +7,8 @@ export interface CompanyFilters {
   municipality?: string;
   uf?: string;
   active?: boolean;
+  origin?: "manual" | "import";
+  hasCertificate?: boolean;
   sort: "code" | "corporate_name" | "municipality" | "uf" | "created_at";
   dir: "asc" | "desc";
   page: number;
@@ -37,6 +39,7 @@ export function parseCompanyFilters(searchParams: SearchParams): CompanyFilters 
     municipality: firstValue(searchParams.municipality) || undefined,
     uf: firstValue(searchParams.uf) || undefined,
     active: firstValue(searchParams.active) ? firstValue(searchParams.active) === "true" : undefined,
+    origin: (firstValue(searchParams.origin) as "manual" | "import") || undefined,
     sort,
     dir,
     page,
@@ -65,6 +68,7 @@ export async function listCompanies(
   if (filters.municipality) query = query.ilike("municipality", `%${filters.municipality}%`);
   if (filters.uf) query = query.eq("uf", filters.uf.toUpperCase());
   if (filters.active !== undefined) query = query.eq("active", filters.active);
+  if (filters.origin) query = query.eq("origin", filters.origin);
 
   query = query.order(filters.sort, { ascending: filters.dir === "asc" });
 

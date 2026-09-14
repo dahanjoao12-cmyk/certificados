@@ -31,6 +31,7 @@ export const SORTABLE_FIELDS = [
   "valid_to",
   "days_remaining",
   "status",
+  "created_at",
 ] as const;
 export type SortableField = (typeof SORTABLE_FIELDS)[number];
 

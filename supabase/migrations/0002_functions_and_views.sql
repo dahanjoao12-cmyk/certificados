@@ -53,8 +53,11 @@ as $$
 $$;
 
 -- Convenience view joining company data, used by the dashboard, company page
--- and report builder. Read-only.
-create or replace view certificates_view as
+-- and report builder. Read-only. security_invoker so it respects the
+-- querying user's RLS on companies/certificates, not the view owner's.
+create or replace view certificates_view
+with (security_invoker = true)
+as
 select
   c.id,
   c.company_id,
