@@ -3,6 +3,12 @@ import { normalizeDocument } from "@/lib/documents/document";
 import type { CertificateStatus, CertificateWithCompany } from "@/lib/types/database";
 import type { CertificateFilters } from "./filters";
 
+// The supabase-js query builder's type narrows on every chained call
+// (.eq/.or/.gte/...), so a plain function that conditionally chains a
+// variable number of filters can't be typed precisely without duplicating
+// the library's internal generics. eslint-disable is scoped to this one
+// parameter rather than widening it project-wide.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyFilters(query: any, filters: CertificateFilters) {
   if (filters.q) {
     const escaped = filters.q.trim().replace(/[%_]/g, (m) => `\\${m}`);
