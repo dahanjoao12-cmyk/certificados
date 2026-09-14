@@ -19,7 +19,7 @@ export function computeCertificateStatus(
   if (archived) return "ARQUIVADO";
 
   const today = startOfDay(new Date());
-  const dueDate = startOfDay(new Date(validTo));
+  const dueDate = startOfDay(validTo);
   const diffDays = Math.round((dueDate.getTime() - today.getTime()) / 86_400_000);
 
   if (diffDays < 0) return "VENCIDO";
@@ -30,12 +30,27 @@ export function computeCertificateStatus(
 
 export function daysRemaining(validTo: string | Date): number {
   const today = startOfDay(new Date());
-  const dueDate = startOfDay(new Date(validTo));
+  const dueDate = startOfDay(validTo);
   return Math.round((dueDate.getTime() - today.getTime()) / 86_400_000);
 }
 
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
+/**
+ * Normalizes to local midnight. Critically, a "yyyy-mm-dd" string (what a
+ * Postgres `date` column serializes as) is parsed as LOCAL midnight here,
+ * NOT via `new Date(string)` -- the JS spec parses a date-only ISO string as
+ * UTC midnight, which silently shifts it a day earlier than intended in any
+ * timezone behind UTC (this bit us: caught by a unit test, see
+ * status.test.ts).
+ */
+function startOfDay(value: string | Date): Date {
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+  }
+  const d = new Date(value);
   d.setHours(0, 0, 0, 0);
   return d;
 }
