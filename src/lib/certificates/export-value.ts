@@ -48,18 +48,8 @@ export function getCertificateExportValue(
       return { value: row.archived ? null : row.days_remaining };
     case "status":
       return { value: statusLabel(row.status) };
-    case "serial_number":
-      return { value: row.serial_number, isText: true };
-    case "certificate_authority":
-      return { value: row.certificate_authority };
-    case "issuer":
-      return { value: row.issuer };
-    case "subject":
-      return { value: row.subject };
-    case "fingerprint":
-      return { value: row.fingerprint, isText: true };
-    case "algorithm":
-      return { value: row.algorithm };
+    case "warning_days":
+      return { value: row.warning_days };
     case "archived":
       return { value: row.archived ? "Sim" : "Não" };
     case "notes":
@@ -105,12 +95,7 @@ export const EXPORTABLE_CERTIFICATE_COLUMNS: { key: string; label: string }[] = 
   { key: "valid_to", label: "Vencimento" },
   { key: "days_remaining", label: "Dias restantes" },
   { key: "status", label: "Status" },
-  { key: "serial_number", label: "Número de série" },
-  { key: "certificate_authority", label: "Autoridade certificadora" },
-  { key: "issuer", label: "Issuer" },
-  { key: "subject", label: "Subject" },
-  { key: "fingerprint", label: "Fingerprint" },
-  { key: "algorithm", label: "Algoritmo" },
+  { key: "warning_days", label: "Prazo de aviso (dias)" },
   { key: "archived", label: "Arquivado" },
   { key: "notes", label: "Observações" },
   { key: "created_at", label: "Criado em" },

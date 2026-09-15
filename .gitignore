@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Claude Code local session settings (can contain machine-specific permission
+# rules with sensitive command strings) -- .claude/launch.json is fine to share.
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -47,6 +51,7 @@ next-env.d.ts
 # ---------------------------------------------------------------------------
 /dados-reais/
 /tmp-uploads/
+/import-data/
 *.pfx
 *.p12
 *.xlsx

@@ -47,7 +47,7 @@ export interface Company {
 
 export type CertificateType = "e-cnpj" | "e-cpf";
 export type CertificateModel = "A1" | "A3";
-export type CertificateOrigin = "manual" | "import" | "pfx";
+export type CertificateOrigin = "manual" | "import";
 export type CertificateStatus =
   | "EM_DIA"
   | "VENCENDO"
@@ -60,22 +60,16 @@ export interface Certificate {
   company_id: string;
   type: CertificateType;
   model: CertificateModel;
-  serial_number: string | null;
-  subject: string | null;
-  issuer: string | null;
-  certificate_authority: string | null;
   valid_from: string | null;
   valid_to: string;
-  fingerprint: string | null;
-  algorithm: string | null;
+  /** Override of settings.certificate_thresholds.warning_days for this certificate; null = use the global default. */
+  warning_days: number | null;
   archived: boolean;
   is_current: boolean;
   origin: CertificateOrigin;
   notes: string | null;
-  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
-  processed_at: string | null;
   created_by: string | null;
 }
 
@@ -192,4 +186,11 @@ export interface UserTablePreference {
   table_key: string;
   columns: string[];
   updated_at: string;
+}
+
+export interface NotificationRead {
+  id: string;
+  certificate_id: string;
+  user_id: string;
+  read_at: string;
 }

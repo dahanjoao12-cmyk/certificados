@@ -16,14 +16,9 @@ function parseForm(formData: FormData) {
   return certificateSchema.safeParse({
     type: formData.get("type"),
     model: formData.get("model"),
-    serial_number: formData.get("serial_number"),
-    subject: formData.get("subject"),
-    issuer: formData.get("issuer"),
-    certificate_authority: formData.get("certificate_authority"),
     valid_from: formData.get("valid_from"),
     valid_to: formData.get("valid_to"),
-    fingerprint: formData.get("fingerprint"),
-    algorithm: formData.get("algorithm"),
+    warning_days: formData.get("warning_days"),
     notes: formData.get("notes"),
   });
 }

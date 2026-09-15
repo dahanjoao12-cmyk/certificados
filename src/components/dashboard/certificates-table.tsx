@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowUpDown, Eye } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { formatDocument } from "@/lib/documents/document";
 import { StatusBadge } from "@/components/certificates/status-badge";
+import { CertificateRowActions } from "@/components/dashboard/certificate-row-actions";
 import type { ColumnDef } from "@/lib/certificates/columns";
 import type { CertificateWithCompany } from "@/lib/types/database";
 import { SORTABLE_FIELDS } from "@/lib/certificates/filters";
@@ -12,7 +13,7 @@ function formatDate(value: string | null): string {
   return `${day}/${month}/${year}`;
 }
 
-function renderCell(row: CertificateWithCompany, key: string): React.ReactNode {
+function renderCell(row: CertificateWithCompany, key: string, defaultWarningDays: number): React.ReactNode {
   switch (key) {
     case "company_code":
       return row.company_code;
@@ -41,10 +42,8 @@ function renderCell(row: CertificateWithCompany, key: string): React.ReactNode {
       return row.archived ? "-" : row.days_remaining;
     case "status":
       return <StatusBadge status={row.status} />;
-    case "serial_number":
-      return row.serial_number ?? "-";
-    case "certificate_authority":
-      return row.certificate_authority ?? "-";
+    case "warning_days":
+      return row.warning_days ? `${row.warning_days} dias` : `Padrão (${defaultWarningDays} dias)`;
     case "company_responsible":
       return row.company_responsible ?? "-";
     case "created_at":
@@ -95,12 +94,16 @@ export function CertificatesTable({
   sort,
   dir,
   currentQuery,
+  isAdmin,
+  defaultWarningDays,
 }: {
   rows: CertificateWithCompany[];
   columns: ColumnDef[];
   sort: string;
   dir: "asc" | "desc";
   currentQuery: string;
+  isAdmin: boolean;
+  defaultWarningDays: number;
 }) {
   if (rows.length === 0) {
     return (
@@ -128,16 +131,16 @@ export function CertificatesTable({
             <tr key={row.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
               {columns.map((col) => (
                 <td key={col.key} className="whitespace-nowrap px-4 py-2.5 text-slate-700">
-                  {renderCell(row, col.key)}
+                  {renderCell(row, col.key, defaultWarningDays)}
                 </td>
               ))}
               <td className="whitespace-nowrap px-4 py-2.5">
-                <Link
-                  href={`/empresas/${row.company_id}`}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900"
-                >
-                  <Eye size={13} /> Ver empresa
-                </Link>
+                <CertificateRowActions
+                  certificateId={row.id}
+                  companyId={row.company_id}
+                  archived={row.archived}
+                  isAdmin={isAdmin}
+                />
               </td>
             </tr>
           ))}

@@ -13,11 +13,13 @@ export function CertificateForm({
   certificate,
   companyId,
   isRenewal,
+  defaultWarningDays,
 }: {
   action: Action;
   certificate?: Certificate;
   companyId: string;
   isRenewal?: boolean;
+  defaultWarningDays: number;
 }) {
   const [state, formAction, pending] = useActionState<CertificateFormState, FormData>(action, {});
   const errors = state.fieldErrors ?? {};
@@ -72,33 +74,21 @@ export function CertificateForm({
       </div>
 
       <div>
-        <Label htmlFor="certificate_authority">Autoridade certificadora</Label>
-        <Input id="certificate_authority" name="certificate_authority" defaultValue={certificate?.certificate_authority ?? ""} />
+        <Label htmlFor="warning_days">Avisar quando estiver vencendo em (dias)</Label>
+        <Input
+          id="warning_days"
+          name="warning_days"
+          type="number"
+          min={1}
+          placeholder={`Padrão: ${defaultWarningDays} dias`}
+          defaultValue={certificate?.warning_days ?? ""}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Deixe em branco para usar o padrão do sistema ({defaultWarningDays} dias, configurável em Configurações).
+        </p>
+        <FieldError>{errors.warning_days}</FieldError>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="serial_number">Número de série</Label>
-          <Input id="serial_number" name="serial_number" defaultValue={certificate?.serial_number ?? ""} />
-        </div>
-        <div>
-          <Label htmlFor="algorithm">Algoritmo</Label>
-          <Input id="algorithm" name="algorithm" defaultValue={certificate?.algorithm ?? ""} />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="subject">Subject</Label>
-        <Input id="subject" name="subject" defaultValue={certificate?.subject ?? ""} />
-      </div>
-      <div>
-        <Label htmlFor="issuer">Issuer</Label>
-        <Input id="issuer" name="issuer" defaultValue={certificate?.issuer ?? ""} />
-      </div>
-      <div>
-        <Label htmlFor="fingerprint">Fingerprint</Label>
-        <Input id="fingerprint" name="fingerprint" defaultValue={certificate?.fingerprint ?? ""} />
-      </div>
       <div>
         <Label htmlFor="notes">Observações</Label>
         <Textarea id="notes" name="notes" rows={3} defaultValue={certificate?.notes ?? ""} />

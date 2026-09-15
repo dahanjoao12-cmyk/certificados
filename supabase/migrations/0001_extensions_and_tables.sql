@@ -65,22 +65,18 @@ create table if not exists certificates (
   company_id uuid not null references companies(id) on delete cascade,
   type text not null check (type in ('e-cnpj', 'e-cpf')),
   model text not null check (model in ('A1', 'A3')),
-  serial_number text,
-  subject text,
-  issuer text,
-  certificate_authority text,
   valid_from date,
   valid_to date not null,
-  fingerprint text,
-  algorithm text,
+  -- Per-certificate override of settings.certificate_thresholds.warning_days
+  -- (section: "avisar quando estiver vencendo em ___ dias"). Null falls back
+  -- to the global default -- see get_certificate_warning_days().
+  warning_days int check (warning_days is null or warning_days > 0),
   archived boolean not null default false,
   is_current boolean not null default true,
-  origin text not null default 'manual' check (origin in ('manual', 'import', 'pfx')),
+  origin text not null default 'manual' check (origin in ('manual', 'import')),
   notes text,
-  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  processed_at timestamptz,
   created_by uuid references profiles(id)
 );
 
@@ -88,7 +84,6 @@ create index if not exists certificates_company_id_idx on certificates (company_
 create index if not exists certificates_valid_to_idx on certificates (valid_to);
 create index if not exists certificates_archived_idx on certificates (archived);
 create index if not exists certificates_is_current_idx on certificates (is_current);
-create unique index if not exists certificates_fingerprint_unique_idx on certificates (fingerprint) where fingerprint is not null;
 
 -- ----------------------------------------------------------------------------
 -- certificate_history: audit trail of what changed on a certificate/company

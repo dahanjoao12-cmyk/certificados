@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { parseCertificateFilters } from "@/lib/certificates/filters";
 import { getCertificateStatusCounts, listCertificates } from "@/lib/certificates/queries";
 import { CERTIFICATE_COLUMNS, CERTIFICATE_TABLE_KEY, resolveVisibleColumns } from "@/lib/certificates/columns";
 import { getTablePreference } from "@/lib/table-preferences/actions";
+import { getCertificateThresholds } from "@/lib/settings/thresholds";
 import { StatusCards } from "@/components/dashboard/status-cards";
 import { FiltersBar } from "@/components/dashboard/filters-bar";
 import { CertificatesTable } from "@/components/dashboard/certificates-table";
@@ -33,9 +35,11 @@ export default async function DashboardPage({
   }
   const visibleColumns = resolveVisibleColumns(visibleKeys);
 
-  const [counts, { rows, total }] = await Promise.all([
+  const [user, counts, { rows, total }, thresholds] = await Promise.all([
+    getCurrentUser(),
     getCertificateStatusCounts(supabase),
     listCertificates(supabase, filters),
+    getCertificateThresholds(supabase),
   ]);
 
   const currentQuery = new URLSearchParams(
@@ -80,6 +84,8 @@ export default async function DashboardPage({
         sort={filters.sort}
         dir={filters.dir}
         currentQuery={currentQuery}
+        isAdmin={user.profile.role === "admin"}
+        defaultWarningDays={thresholds.warning_days}
       />
 
       <Pagination page={filters.page} pageSize={filters.pageSize} total={total} currentQuery={currentQuery} />

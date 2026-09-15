@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CertificateForm } from "@/components/certificates/certificate-form";
 import { updateCertificate } from "@/lib/certificates/actions";
+import { getCertificateThresholds } from "@/lib/settings/thresholds";
 import type { Certificate } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -14,9 +15,10 @@ export default async function EditCertificatePage({
   const { id, certificateId } = await params;
   const supabase = await createClient();
 
-  const [{ data: company }, { data: certificate }] = await Promise.all([
+  const [{ data: company }, { data: certificate }, thresholds] = await Promise.all([
     supabase.from("companies").select("id, corporate_name").eq("id", id).maybeSingle(),
     supabase.from("certificates").select("*").eq("id", certificateId).maybeSingle(),
+    getCertificateThresholds(supabase),
   ]);
 
   if (!company || !certificate) notFound();
@@ -30,7 +32,12 @@ export default async function EditCertificatePage({
         <p className="text-sm text-slate-500">{company.corporate_name}</p>
       </div>
       <div className="rounded-md border border-slate-200 bg-white p-6">
-        <CertificateForm action={boundAction} certificate={certificate as Certificate} companyId={id} />
+        <CertificateForm
+          action={boundAction}
+          certificate={certificate as Certificate}
+          companyId={id}
+          defaultWarningDays={thresholds.warning_days}
+        />
       </div>
     </div>
   );

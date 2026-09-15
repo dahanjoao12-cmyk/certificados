@@ -12,9 +12,6 @@ export default function ImportPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/certificados/importar-pfx" className="text-sm text-slate-600 underline">
-            Processar certificado .pfx/.p12
-          </Link>
           <Link href="/importar/historico" className="text-sm text-slate-600 underline">
             Histórico de importações
           </Link>

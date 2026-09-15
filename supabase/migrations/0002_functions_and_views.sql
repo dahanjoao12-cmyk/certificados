@@ -21,7 +21,9 @@ as $$
   );
 $$;
 
-create or replace function certificate_status(p_valid_to date, p_archived boolean)
+-- p_warning_days is the certificate's own override (certificates.warning_days);
+-- pass null to fall back to the global settings.certificate_thresholds value.
+create or replace function certificate_status(p_valid_to date, p_archived boolean, p_warning_days int default null)
 returns text
 language sql
 stable
@@ -30,7 +32,7 @@ as $$
     when p_archived then 'ARQUIVADO'
     when p_valid_to < current_date then 'VENCIDO'
     when p_valid_to = current_date then 'VENCE_HOJE'
-    when p_valid_to <= current_date + get_certificate_warning_days() then 'VENCENDO'
+    when p_valid_to <= current_date + coalesce(p_warning_days, get_certificate_warning_days()) then 'VENCENDO'
     else 'EM_DIA'
   end;
 $$;
@@ -63,25 +65,18 @@ select
   c.company_id,
   c.type,
   c.model,
-  c.serial_number,
-  c.subject,
-  c.issuer,
-  c.certificate_authority,
   c.valid_from,
   c.valid_to,
-  c.fingerprint,
-  c.algorithm,
+  c.warning_days,
   c.archived,
   c.is_current,
   c.origin,
   c.notes,
-  c.metadata,
   c.created_at,
   c.updated_at,
-  c.processed_at,
   c.created_by,
-  certificate_status(c.valid_to, c.archived) as status,
-  certificate_status_priority(certificate_status(c.valid_to, c.archived)) as status_priority,
+  certificate_status(c.valid_to, c.archived, c.warning_days) as status,
+  certificate_status_priority(certificate_status(c.valid_to, c.archived, c.warning_days)) as status_priority,
   (c.valid_to - current_date) as days_remaining,
   co.code as company_code,
   co.document as company_document,
