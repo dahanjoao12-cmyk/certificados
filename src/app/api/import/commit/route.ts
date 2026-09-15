@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseSpreadsheet } from "@/lib/import/parse";
-import { processImportRows } from "@/lib/import/process";
+import { processImportRows, type RowResolution } from "@/lib/import/process";
 import { logAudit } from "@/lib/audit/log";
 
 export async function POST(request: NextRequest) {
@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Mapeie ao menos a coluna de CNPJ/CPF." }, { status: 400 });
   }
 
+  const resolutionsRaw = formData.get("resolutions");
+  const resolutions: Record<string, RowResolution> =
+    typeof resolutionsRaw === "string" && resolutionsRaw ? JSON.parse(resolutionsRaw) : {};
+
   const { rows } = await parseSpreadsheet(file);
 
   const { data: importRun, error: importError } = await supabase
@@ -44,7 +48,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Falha ao registrar a importação." }, { status: 500 });
   }
 
-  const summary = await processImportRows(supabase, rows, mapping, user.id, false);
+  const summary = await processImportRows(supabase, rows, mapping, user.id, false, resolutions);
 
   await supabase
     .from("imports")

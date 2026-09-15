@@ -29,8 +29,6 @@ export const IMPORT_TARGET_FIELDS: ImportTargetField[] = [
   { key: "valid_from", label: "Início da validade", group: "certificado" },
   { key: "cert_type", label: "Tipo (e-CNPJ/e-CPF)", group: "certificado" },
   { key: "cert_model", label: "Modelo (A1/A3)", group: "certificado" },
-  { key: "certificate_authority", label: "Autoridade certificadora", group: "certificado" },
-  { key: "serial_number", label: "Número de série", group: "certificado" },
 ];
 
 const AUTO_MAP_HINTS: Record<string, string[]> = {

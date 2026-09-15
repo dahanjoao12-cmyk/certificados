@@ -3,13 +3,29 @@ import { detectDocumentType, normalizeDocument, validateDocument } from "@/lib/d
 import { parseFlexibleDate } from "./date";
 import type { ImportRowResult } from "@/lib/types/database";
 
+/** How the user chose to resolve a per-row conflict (section: resolução de conflito de importação). */
+export type RowResolution = "keep_existing" | "use_imported";
+
+export interface RowConflictDetails {
+  field: "code";
+  existingValue: string;
+  importedValue: string;
+}
+
 export interface ImportRowOutcome {
   rowNumber: number;
   raw: Record<string, string>;
+  /** Combined, display-priority result for this row (conflict > error > cert outcome > company outcome). A row can affect BOTH a company and a certificate -- use companyOutcome/certOutcome, not this field, for aggregate counts. */
   result: ImportRowResult;
   message: string | null;
   companyId: string | null;
   certificateId: string | null;
+  /** The company-side outcome alone (null if the row didn't touch a company beyond an existing untouched match). */
+  companyOutcome: ImportRowResult | null;
+  /** The certificate-side outcome alone (null if the row had no valid_to to process). */
+  certOutcome: ImportRowResult | null;
+  /** Present only for a resolvable conflict (today: company code mismatch) so the UI can offer keep-vs-use-imported. Null once resolved or for other conflict kinds. */
+  conflict: RowConflictDetails | null;
 }
 
 export interface ImportSummary {
@@ -38,6 +54,12 @@ interface ProcessContext {
   companyByDocument: Map<string, CompanyCacheEntry>;
   companyByCode: Map<string, string>; // code -> normalized document, to catch in-batch code conflicts
   maxValidToByCompany: Map<string, string | null>;
+  /** Documents already resolved (found or confirmed absent) by preloadExistingCompanies -- skip the per-row fallback query for these even on a miss. */
+  preloadedDocuments: Set<string>;
+  /** companyId -> valid_to values already resolved (created or flagged duplicate) earlier in this same run, to catch in-batch duplicate rows without a DB round trip. */
+  certificatesSeenInBatch: Map<string, Set<string>>;
+  /** rowNumber -> user's choice for that row's code conflict, from the previous preview step. */
+  resolutions: Record<string, RowResolution>;
 }
 
 const COMPANY_FIELD_KEYS = [
@@ -64,13 +86,72 @@ function mapRow(raw: Record<string, string>, mapping: Record<string, string>): R
   return mapped;
 }
 
+const COMPANY_LOOKUP_COLUMNS =
+  "id, code, document, document_type, corporate_name, trade_name, short_name, municipality, uf, responsible, phone, email, situation, notes";
+
 async function loadExistingCompany(ctx: ProcessContext, normalizedDocument: string) {
   const { data } = await ctx.supabase
     .from("companies")
-    .select("id, code, document_type, corporate_name, trade_name, short_name, municipality, uf, responsible, phone, email, situation, notes")
+    .select(COMPANY_LOOKUP_COLUMNS)
     .eq("document", normalizedDocument)
     .maybeSingle();
   return data;
+}
+
+function cacheCompany(ctx: ProcessContext, normalizedDocument: string, existing: NonNullable<Awaited<ReturnType<typeof loadExistingCompany>>>) {
+  const entry: CompanyCacheEntry = {
+    id: existing.id,
+    code: existing.code,
+    document_type: existing.document_type,
+    isNewInBatch: false,
+    fields: {
+      corporate_name: existing.corporate_name,
+      trade_name: existing.trade_name,
+      short_name: existing.short_name,
+      municipality: existing.municipality,
+      uf: existing.uf,
+      responsible: existing.responsible,
+      phone: existing.phone,
+      email: existing.email,
+      situation: existing.situation,
+      notes: existing.notes,
+    },
+  };
+  ctx.companyByDocument.set(normalizedDocument, entry);
+  ctx.companyByCode.set(existing.code, normalizedDocument);
+}
+
+/**
+ * A row-by-row import used to check "does this company already exist?" with
+ * one sequential network round trip per row -- for a few hundred rows that's
+ * well over a minute against a remote Postgres. Instead, resolve every
+ * document in the file that COULD already exist up front, in a handful of
+ * bulk `in()` queries, and prime the per-row caches before the main loop.
+ */
+async function preloadExistingCompanies(
+  ctx: ProcessContext,
+  rawRows: Record<string, string>[],
+  mapping: Record<string, string>
+): Promise<void> {
+  const normalizedDocuments = new Set<string>();
+  for (const raw of rawRows) {
+    const mapped = mapRow(raw, mapping);
+    if (!mapped.document) continue;
+    const validation = validateDocument(mapped.document);
+    if (validation.valid && validation.normalized) normalizedDocuments.add(validation.normalized);
+  }
+  if (normalizedDocuments.size === 0) return;
+
+  const documents = [...normalizedDocuments];
+  const chunkSize = 200;
+  for (let i = 0; i < documents.length; i += chunkSize) {
+    const chunk = documents.slice(i, i + chunkSize);
+    const { data } = await ctx.supabase.from("companies").select(COMPANY_LOOKUP_COLUMNS).in("document", chunk);
+    for (const existing of data ?? []) {
+      cacheCompany(ctx, existing.document, existing);
+    }
+  }
+  for (const doc of documents) ctx.preloadedDocuments.add(doc);
 }
 
 async function loadMaxValidTo(ctx: ProcessContext, companyId: string): Promise<string | null> {
@@ -101,13 +182,27 @@ async function processRow(
   mapping: Record<string, string>
 ): Promise<ImportRowOutcome> {
   const mapped = mapRow(raw, mapping);
-  const outcome = (result: ImportRowResult, message: string | null, companyId: string | null = null, certificateId: string | null = null): ImportRowOutcome => ({
+  const outcome = (
+    result: ImportRowResult,
+    message: string | null,
+    companyId: string | null = null,
+    certificateId: string | null = null,
+    conflict: RowConflictDetails | null = null,
+    // Every early return happens during company resolution, before any
+    // certificate is touched, so `result` itself is the company outcome
+    // there; the merged return at the bottom overrides both explicitly.
+    companyOutcome: ImportRowResult | null = result,
+    certOutcome: ImportRowResult | null = null
+  ): ImportRowOutcome => ({
     rowNumber,
     raw,
     result,
     message,
     companyId,
     certificateId,
+    companyOutcome,
+    certOutcome,
+    conflict,
   });
 
   const documentRaw = mapped.document;
@@ -124,31 +219,19 @@ async function processRow(
   let entry = ctx.companyByDocument.get(normalizedDocument);
   let companyResult: ImportRowResult | null = null;
   let companyMessage: string | null = null;
+  let codeConflict: RowConflictDetails | null = null;
 
-  if (!entry) {
+  if (!entry && !ctx.preloadedDocuments.has(normalizedDocument)) {
+    // Only reached for a document preloadExistingCompanies didn't already
+    // resolve (e.g. it failed to normalize during that pre-pass). For every
+    // document covered by the preload, a cache miss here means "confirmed
+    // absent" -- no need to repeat the query.
     const existing = await loadExistingCompany(ctx, normalizedDocument);
     if (existing) {
-      entry = {
-        id: existing.id,
-        code: existing.code,
-        document_type: existing.document_type,
-        isNewInBatch: false,
-        fields: {
-          corporate_name: existing.corporate_name,
-          trade_name: existing.trade_name,
-          short_name: existing.short_name,
-          municipality: existing.municipality,
-          uf: existing.uf,
-          responsible: existing.responsible,
-          phone: existing.phone,
-          email: existing.email,
-          situation: existing.situation,
-          notes: existing.notes,
-        },
-      };
-      ctx.companyByDocument.set(normalizedDocument, entry);
-      ctx.companyByCode.set(existing.code, normalizedDocument);
+      cacheCompany(ctx, normalizedDocument, existing);
+      entry = ctx.companyByDocument.get(normalizedDocument);
     }
+    ctx.preloadedDocuments.add(normalizedDocument);
   }
 
   if (!entry) {
@@ -212,8 +295,22 @@ async function processRow(
   } else {
     // Existing (or already-created-in-batch) company: apply safe updates, flag code conflicts.
     if (mapped.code && mapped.code !== entry.code) {
-      companyResult = "conflict";
-      companyMessage = `Código informado (${mapped.code}) difere do código já cadastrado (${entry.code}). Mantido o código existente.`;
+      const resolution = ctx.resolutions[String(rowNumber)];
+      if (resolution === "use_imported") {
+        const previousCode = entry.code;
+        if (!ctx.dryRun) {
+          await ctx.supabase.from("companies").update({ code: mapped.code, updated_by: ctx.userId }).eq("id", entry.id);
+        }
+        ctx.companyByCode.delete(previousCode);
+        ctx.companyByCode.set(mapped.code, normalizedDocument);
+        entry.code = mapped.code;
+        companyResult = "company_updated";
+        companyMessage = `Código atualizado de ${previousCode} para ${mapped.code} (conforme escolha na prévia).`;
+      } else {
+        companyResult = "conflict";
+        companyMessage = `Código informado (${mapped.code}) difere do código já cadastrado (${entry.code}). Mantido o código existente.`;
+        codeConflict = { field: "code", existingValue: entry.code, importedValue: mapped.code };
+      }
     }
 
     const updates: Record<string, string | null> = {};
@@ -258,9 +355,24 @@ async function processRow(
       }
       const currentMax = ctx.maxValidToByCompany.get(entry.id) ?? null;
 
+      // A company created earlier in THIS run can't already have a certificate
+      // in the DB for any date -- so only a company that existed before this
+      // import (or an exact repeat of a date already seen in this batch) needs
+      // the real existence check. Avoids a DB round trip per row for the
+      // common case (first-time bulk import into an otherwise-empty table).
+      const seenInBatch = ctx.certificatesSeenInBatch.get(entry.id)?.has(validTo) ?? false;
       const alreadyExists = ctx.dryRun
         ? false
-        : await certificateExists(ctx, entry.id, validTo);
+        : seenInBatch
+          ? true
+          : entry.isNewInBatch
+            ? false
+            : await certificateExists(ctx, entry.id, validTo);
+
+      if (!ctx.dryRun) {
+        if (!ctx.certificatesSeenInBatch.has(entry.id)) ctx.certificatesSeenInBatch.set(entry.id, new Set());
+        ctx.certificatesSeenInBatch.get(entry.id)!.add(validTo);
+      }
 
       if (alreadyExists) {
         certResult = "duplicate";
@@ -284,8 +396,6 @@ async function processRow(
               model: certModel,
               valid_from: validFrom,
               valid_to: validTo,
-              certificate_authority: mapped.certificate_authority || null,
-              serial_number: mapped.serial_number || null,
               is_current: isNewCurrent,
               origin: "import",
               created_by: ctx.userId,
@@ -330,7 +440,15 @@ async function processRow(
 
   const finalMessage = [companyMessage, certMessage].filter(Boolean).join(" ") || null;
 
-  return outcome(finalResult, finalMessage, entry.id.startsWith("pending:") ? null : entry.id, certificateId);
+  return outcome(
+    finalResult,
+    finalMessage,
+    entry.id.startsWith("pending:") ? null : entry.id,
+    certificateId,
+    finalResult === "conflict" ? codeConflict : null,
+    companyResult,
+    certResult
+  );
 }
 
 export async function processImportRows(
@@ -338,7 +456,8 @@ export async function processImportRows(
   rawRows: Record<string, string>[],
   mapping: Record<string, string>,
   userId: string,
-  dryRun: boolean
+  dryRun: boolean,
+  resolutions: Record<string, RowResolution> = {}
 ): Promise<ImportSummary> {
   const ctx: ProcessContext = {
     supabase,
@@ -347,19 +466,28 @@ export async function processImportRows(
     companyByDocument: new Map(),
     companyByCode: new Map(),
     maxValidToByCompany: new Map(),
+    preloadedDocuments: new Set(),
+    certificatesSeenInBatch: new Map(),
+    resolutions,
   };
+
+  await preloadExistingCompanies(ctx, rawRows, mapping);
 
   const rows: ImportRowOutcome[] = [];
   for (let i = 0; i < rawRows.length; i++) {
     rows.push(await processRow(ctx, i + 2, rawRows[i], mapping));
   }
 
+  // A single row can create/update a company AND create a certificate at the
+  // same time -- count each side from its own outcome, not from `result`
+  // (which collapses both into one display value and would silently drop
+  // whichever one lost the priority order).
   const summary: ImportSummary = {
     totalRows: rawRows.length,
-    companiesCreated: rows.filter((r) => r.result === "company_created").length,
-    companiesUpdated: rows.filter((r) => r.result === "company_updated").length,
-    certificatesCreated: rows.filter((r) => r.result === "certificate_created").length,
-    duplicates: rows.filter((r) => r.result === "duplicate").length,
+    companiesCreated: rows.filter((r) => r.companyOutcome === "company_created").length,
+    companiesUpdated: rows.filter((r) => r.companyOutcome === "company_updated").length,
+    certificatesCreated: rows.filter((r) => r.certOutcome === "certificate_created").length,
+    duplicates: rows.filter((r) => r.certOutcome === "duplicate").length,
     conflicts: rows.filter((r) => r.result === "conflict").length,
     errors: rows.filter((r) => r.result === "error").length,
     rows,

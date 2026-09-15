@@ -6,7 +6,7 @@ import { UploadCloud, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { IMPORT_TARGET_FIELDS } from "@/lib/import/fields";
-import type { ImportRowOutcome } from "@/lib/import/process";
+import type { ImportRowOutcome, RowResolution } from "@/lib/import/process";
 
 type Step = "upload" | "mapping" | "preview" | "done";
 
@@ -56,6 +56,7 @@ export function ImportWizard() {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState<SummaryResponse | null>(null);
   const [result, setResult] = useState<SummaryResponse | null>(null);
+  const [resolutions, setResolutions] = useState<Record<string, RowResolution>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +96,7 @@ export function ImportWizard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao gerar prévia.");
       setPreview(data);
+      setResolutions({});
       setStep("preview");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao gerar prévia.");
@@ -112,6 +114,7 @@ export function ImportWizard() {
       formData.append("file", file);
       formData.append("mapping", JSON.stringify(mapping));
       formData.append("fileName", file.name);
+      formData.append("resolutions", JSON.stringify(resolutions));
       const res = await fetch("/api/import/commit", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao importar.");
@@ -131,6 +134,7 @@ export function ImportWizard() {
     setMapping({});
     setPreview(null);
     setResult(null);
+    setResolutions({});
     setError(null);
   }
 
@@ -228,7 +232,7 @@ export function ImportWizard() {
             <SummaryCard label="Erros" value={preview.errors} warn={preview.errors > 0} />
           </div>
 
-          <RowsTable rows={preview.rows} />
+          <RowsTable rows={preview.rows} resolutions={resolutions} onResolutionChange={setResolutions} />
 
           <div className="flex gap-2">
             <Button onClick={handleCommit} disabled={loading}>
@@ -285,7 +289,15 @@ function SummaryCard({ label, value, warn }: { label: string; value: number; war
   );
 }
 
-function RowsTable({ rows }: { rows: ImportRowOutcome[] }) {
+function RowsTable({
+  rows,
+  resolutions,
+  onResolutionChange,
+}: {
+  rows: ImportRowOutcome[];
+  resolutions?: Record<string, RowResolution>;
+  onResolutionChange?: (updater: (prev: Record<string, RowResolution>) => Record<string, RowResolution>) => void;
+}) {
   const notable = rows.filter((r) => r.result !== "skipped");
   if (notable.length === 0) return null;
 
@@ -297,24 +309,65 @@ function RowsTable({ rows }: { rows: ImportRowOutcome[] }) {
             <th className="px-3 py-2">Linha</th>
             <th className="px-3 py-2">Resultado</th>
             <th className="px-3 py-2">Detalhes</th>
+            {onResolutionChange && <th className="px-3 py-2">Resolução</th>}
           </tr>
         </thead>
         <tbody>
-          {notable.map((row) => (
-            <tr key={row.rowNumber} className="border-b border-slate-50 last:border-0">
-              <td className="px-3 py-1.5 text-slate-500">{row.rowNumber}</td>
-              <td className={`px-3 py-1.5 font-medium ${RESULT_COLORS[row.result]}`}>
-                {row.result === "error" || row.result === "conflict" ? (
-                  <span className="inline-flex items-center gap-1">
-                    <AlertTriangle size={12} /> {RESULT_LABELS[row.result]}
-                  </span>
-                ) : (
-                  RESULT_LABELS[row.result]
+          {notable.map((row) => {
+            const key = String(row.rowNumber);
+            const chosen: RowResolution = resolutions?.[key] ?? "keep_existing";
+            return (
+              <tr key={row.rowNumber} className="border-b border-slate-50 last:border-0">
+                <td className="px-3 py-1.5 text-slate-500">{row.rowNumber}</td>
+                <td className={`px-3 py-1.5 font-medium ${RESULT_COLORS[row.result]}`}>
+                  {row.result === "error" || row.result === "conflict" ? (
+                    <span className="inline-flex items-center gap-1">
+                      <AlertTriangle size={12} /> {RESULT_LABELS[row.result]}
+                    </span>
+                  ) : (
+                    RESULT_LABELS[row.result]
+                  )}
+                </td>
+                <td className="px-3 py-1.5 text-slate-600">{row.message ?? "-"}</td>
+                {onResolutionChange && (
+                  <td className="px-3 py-1.5">
+                    {row.conflict?.field === "code" && (
+                      <div className="inline-flex overflow-hidden rounded border border-slate-200">
+                        <button
+                          type="button"
+                          title={`Manter código já cadastrado (${row.conflict.existingValue})`}
+                          onClick={() =>
+                            onResolutionChange((prev) => {
+                              const next = { ...prev };
+                              delete next[key];
+                              return next;
+                            })
+                          }
+                          className={`px-2 py-1 ${
+                            chosen === "keep_existing" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          Manter existente ({row.conflict.existingValue})
+                        </button>
+                        <button
+                          type="button"
+                          title={`Usar o código da planilha (${row.conflict.importedValue})`}
+                          onClick={() =>
+                            onResolutionChange((prev) => ({ ...prev, [key]: "use_imported" }))
+                          }
+                          className={`border-l border-slate-200 px-2 py-1 ${
+                            chosen === "use_imported" ? "bg-slate-900 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          Usar da planilha ({row.conflict.importedValue})
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 )}
-              </td>
-              <td className="px-3 py-1.5 text-slate-600">{row.message ?? "-"}</td>
-            </tr>
-          ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
