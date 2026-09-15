@@ -7,6 +7,7 @@ import {
   Building2,
   FileBarChart,
   UploadCloud,
+  Bell,
   Settings,
   Users,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils/cn";
 const NAV_ITEMS: { href: string; label: string; icon: typeof FileCheck2; exact?: boolean }[] = [
   { href: "/", label: "Certificados", icon: FileCheck2, exact: true },
   { href: "/empresas", label: "Empresas", icon: Building2 },
+  { href: "/notificacoes", label: "Notificações", icon: Bell },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/importar", label: "Importar", icon: UploadCloud },
 ];

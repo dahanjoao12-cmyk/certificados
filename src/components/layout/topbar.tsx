@@ -1,14 +1,17 @@
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { GlobalSearch } from "./global-search";
+import { NotificationsBell } from "./notifications-bell";
+import type { NotificationItem } from "@/lib/notifications/queries";
 
-export function Topbar({ userName }: { userName: string }) {
+export function Topbar({ userName, notifications }: { userName: string; notifications: NotificationItem[] }) {
   return (
     <header className="flex h-14 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4">
       <div className="w-full max-w-md">
         <GlobalSearch />
       </div>
       <div className="flex items-center gap-3">
+        <NotificationsBell items={notifications} />
         <span className="text-sm text-slate-600">{userName}</span>
         <form action={signOut}>
           <button
