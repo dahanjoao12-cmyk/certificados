@@ -30,8 +30,15 @@ const HISTORY_ACTION_LABELS: Record<string, string> = {
   deleted: "Certificado excluído",
 };
 
-export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CompanyDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ erro?: string }>;
+}) {
   const { id } = await params;
+  const { erro } = await searchParams;
   const supabase = await createClient();
 
   const { data: company } = await supabase.from("companies").select("*").eq("id", id).maybeSingle();
@@ -57,6 +64,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-6">
+      {erro === "certificado" && (
+        <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-inset ring-amber-200">
+          A empresa foi criada, mas não foi possível salvar o certificado. Cadastre-o abaixo.
+        </div>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">{typedCompany.corporate_name}</h1>

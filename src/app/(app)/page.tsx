@@ -11,6 +11,7 @@ import { CertificatesTable } from "@/components/dashboard/certificates-table";
 import { Pagination } from "@/components/dashboard/pagination";
 import { ColumnPicker } from "@/components/dashboard/column-picker";
 import { ExportDialog } from "@/components/dashboard/export-dialog";
+import { NewCompanyModal } from "@/components/companies/new-company-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -50,9 +51,12 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Certificados Digitais</h1>
-        <p className="text-sm text-slate-500">Gerencie os certificados digitais dos clientes.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Certificados Digitais</h1>
+          <p className="text-sm text-slate-500">Gerencie os certificados digitais dos clientes.</p>
+        </div>
+        <NewCompanyModal defaultWarningDays={thresholds.warning_days} />
       </div>
 
       <StatusCards

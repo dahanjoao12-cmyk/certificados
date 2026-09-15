@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { parseCompanyFilters, listCompanies } from "@/lib/companies/queries";
+import { getCertificateThresholds } from "@/lib/settings/thresholds";
 import { formatDocument } from "@/lib/documents/document";
-import { ButtonLink } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Pagination } from "@/components/dashboard/pagination";
+import { NewCompanyModal } from "@/components/companies/new-company-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,10 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   const filters = parseCompanyFilters(params);
   const supabase = await createClient();
-  const { rows, total } = await listCompanies(supabase, filters);
+  const [{ rows, total }, thresholds] = await Promise.all([
+    listCompanies(supabase, filters),
+    getCertificateThresholds(supabase),
+  ]);
 
   const currentQuery = new URLSearchParams(
     Object.entries(params).flatMap(([key, value]) =>
@@ -30,9 +33,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
           <h1 className="text-xl font-semibold text-slate-900">Empresas</h1>
           <p className="text-sm text-slate-500">Cadastro das empresas do escritório.</p>
         </div>
-        <ButtonLink href="/empresas/nova">
-          <Plus size={14} /> Nova empresa
-        </ButtonLink>
+        <NewCompanyModal defaultWarningDays={thresholds.warning_days} />
       </div>
 
       <form className="flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-white p-4" method="get">

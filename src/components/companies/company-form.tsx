@@ -8,7 +8,16 @@ import type { CompanyFormState } from "@/lib/companies/actions";
 
 type Action = (prevState: CompanyFormState, formData: FormData) => Promise<CompanyFormState>;
 
-export function CompanyForm({ action, company }: { action: Action; company?: Company }) {
+export function CompanyForm({
+  action,
+  company,
+  onCancel,
+}: {
+  action: Action;
+  company?: Company;
+  /** When set (e.g. rendered inside a modal), replaces the "Cancelar" link with a plain close callback. */
+  onCancel?: () => void;
+}) {
   const [state, formAction, pending] = useActionState<CompanyFormState, FormData>(action, {});
   const errors = state.fieldErrors ?? {};
 
@@ -68,18 +77,11 @@ export function CompanyForm({ action, company }: { action: Action; company?: Com
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="situation">Situação</Label>
-          <Input id="situation" name="situation" defaultValue={company?.situation ?? ""} placeholder="ativa, inativa..." />
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="responsible">Responsável interno</Label>
           <Input id="responsible" name="responsible" defaultValue={company?.responsible ?? ""} />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="phone">Telefone</Label>
           <Input id="phone" name="phone" defaultValue={company?.phone ?? ""} />
@@ -105,9 +107,15 @@ export function CompanyForm({ action, company }: { action: Action; company?: Com
         <Button type="submit" disabled={pending}>
           {pending ? "Salvando..." : "Salvar"}
         </Button>
-        <ButtonLink href={company ? `/empresas/${company.id}` : "/empresas"} variant="secondary">
-          Cancelar
-        </ButtonLink>
+        {onCancel ? (
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancelar
+          </Button>
+        ) : (
+          <ButtonLink href={company ? `/empresas/${company.id}` : "/empresas"} variant="secondary">
+            Cancelar
+          </ButtonLink>
+        )}
       </div>
     </form>
   );
