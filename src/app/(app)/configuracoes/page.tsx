@@ -2,6 +2,8 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { getCertificateThresholds } from "@/lib/settings/thresholds";
 import { ThresholdsForm } from "@/components/settings/thresholds-form";
+import { SendDigestButton } from "@/components/settings/send-digest-button";
+import { Label } from "@/components/ui/input";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,17 @@ export default async function SettingsPage() {
       <div className="rounded-md border border-slate-200 bg-white p-6">
         <ThresholdsForm thresholds={thresholds} readOnly={user.profile.role !== "admin"} />
       </div>
+
+      {user.profile.role === "admin" && (
+        <div className="rounded-md border border-slate-200 bg-white p-6">
+          <Label>Notificação por e-mail</Label>
+          <p className="mb-3 text-xs text-slate-500">
+            Um resumo é enviado automaticamente todo dia para todos os usuários ativos, com os certificados
+            vencendo/vencidos no momento. Use o botão abaixo para disparar agora, sem esperar o horário programado.
+          </p>
+          <SendDigestButton />
+        </div>
+      )}
     </div>
   );
 }

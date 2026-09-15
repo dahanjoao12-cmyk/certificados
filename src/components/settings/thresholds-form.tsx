@@ -67,8 +67,8 @@ export function ThresholdsForm({
           ))}
         </div>
         <p className="mt-1 text-xs text-slate-500">
-          Ainda não enviamos notificações automáticas -- estes valores já ficam salvos para quando o envio (sistema,
-          e-mail, WhatsApp) for implementado.
+          Reservado para marcos futuros (ex.: um e-mail extra exatamente 7 dias antes). Hoje o envio por e-mail é um
+          resumo diário com tudo que está vencendo, vence hoje ou vencido -- ver abaixo.
         </p>
       </div>
 

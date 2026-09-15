@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit/log";
+import { sendEmail } from "@/lib/email/send";
+import { inviteEmailHtml } from "@/lib/email/templates";
+import { appUrl } from "@/lib/utils/app-url";
 
 export interface UserFormState {
   error?: string;
@@ -29,34 +32,55 @@ export async function createUser(_prevState: UserFormState, formData: FormData):
 
   const email = String(formData.get("email") ?? "").trim();
   const fullName = String(formData.get("full_name") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
   const role = formData.get("role") === "admin" ? "admin" : "user";
 
-  if (!email || !fullName || password.length < 8) {
-    return { error: "Preencha nome, e-mail e uma senha com ao menos 8 caracteres." };
+  if (!email || !fullName) {
+    return { error: "Preencha nome e e-mail." };
   }
 
   const admin = createAdminClient();
-  const { data: created, error } = await admin.auth.admin.createUser({
+
+  // No password is collected here: generateLink creates the auth user in an
+  // "invited" state and hands back a one-time link (never sent by Supabase
+  // itself) that we email ourselves via Resend, matching the templates/
+  // sender used for every other email the app sends. The user sets their
+  // own password after following the link (see /auth/callback, /definir-senha).
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "invite",
     email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: fullName, role },
+    options: {
+      data: { full_name: fullName, role },
+      redirectTo: `${appUrl()}/auth/callback?next=/definir-senha`,
+    },
   });
 
   if (error) {
-    return { error: error.message.includes("already been registered") ? "Já existe um usuário com este e-mail." : "Não foi possível criar o usuário." };
+    return { error: error.message.includes("already been registered") ? "Já existe um usuário com este e-mail." : "Não foi possível convidar o usuário." };
+  }
+
+  const inviteLink = data.properties?.action_link;
+  let emailWarning: string | null = null;
+  if (inviteLink) {
+    const sent = await sendEmail({
+      to: email,
+      subject: "Você foi convidado — Certificados Digitais",
+      html: inviteEmailHtml({ fullName, inviteLink }),
+    });
+    if (!sent.ok) {
+      emailWarning = `Usuário convidado, mas o e-mail falhou (${sent.error}). Link para compartilhar manualmente: ${inviteLink}`;
+    }
   }
 
   await logAudit(supabase, {
     userId: user.id,
     action: "create_user",
     entityType: "profile",
-    entityId: created.user?.id,
-    description: `criou o usuário ${fullName} (${email}, perfil ${role})`,
+    entityId: data.user?.id,
+    description: `convidou o usuário ${fullName} (${email}, perfil ${role})`,
   });
 
   revalidatePath("/usuarios");
+  if (emailWarning) return { error: emailWarning };
   return { success: true };
 }
 

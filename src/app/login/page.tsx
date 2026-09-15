@@ -3,9 +3,9 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -14,6 +14,11 @@ export default async function LoginPage({
         <p className="mt-1 mb-6 text-sm text-slate-500">
           Acesso interno do escritório. Entre com suas credenciais.
         </p>
+        {error === "convite_invalido" && (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-inset ring-amber-200">
+            Este link de convite é inválido ou expirou. Peça um novo convite a um administrador.
+          </p>
+        )}
         <LoginForm next={next ?? "/"} />
       </div>
     </div>

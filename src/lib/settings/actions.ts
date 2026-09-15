@@ -3,10 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit/log";
+import { sendCertificateDigestEmails } from "@/lib/notifications/digest";
 
 export interface SettingsFormState {
   error?: string;
   success?: boolean;
+}
+
+export interface DigestFormState {
+  error?: string;
+  success?: string;
 }
 
 export async function saveCertificateThresholds(
@@ -53,4 +59,34 @@ export async function saveCertificateThresholds(
   revalidatePath("/configuracoes");
   revalidatePath("/");
   return { success: true };
+}
+
+export async function sendDigestNow(): Promise<DigestFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") {
+    return { error: "Apenas administradores podem disparar notificações." };
+  }
+
+  const result = await sendCertificateDigestEmails(supabase);
+
+  await logAudit(supabase, {
+    userId: user.id,
+    action: "send_digest_email",
+    entityType: "notification",
+    description: `disparou manualmente o envio de notificações por e-mail (${result.alertingCertificates} certificado(s), ${result.sent}/${result.recipients} e-mail(s) enviados)`,
+  });
+
+  if (result.alertingCertificates === 0) {
+    return { success: "Nenhum certificado vencendo, vencido ou vence hoje no momento -- nenhum e-mail enviado." };
+  }
+
+  return {
+    success: `${result.sent} e-mail(s) enviado(s) para ${result.recipients} usuário(s), referente a ${result.alertingCertificates} certificado(s)${result.failed > 0 ? ` (${result.failed} falharam)` : ""}.`,
+  };
 }
