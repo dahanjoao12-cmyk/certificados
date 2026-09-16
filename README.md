@@ -216,7 +216,17 @@ npm test
 - Parsing de datas em planilha (`dd/mm/yyyy`, `yyyy-mm-dd`, datas impossíveis).
 - Geração de XLSX/CSV: CNPJ e código permanecem texto (nunca notação científica), datas viram células de data reais.
 
-O que **não** está coberto por testes automatizados: CRUD de empresas/certificados de ponta a ponta, RLS, o motor de deduplicação de importação, geração de relatório via `certificates_view`, notificações, convite/redefinição de senha. Isso já é viável de escrever hoje (existe um projeto Supabase real, inclusive com dados reais importados) — é o próximo item da lista abaixo.
+### Testes de integração
+
+```bash
+npm run test:integration
+```
+
+10 testes rodando contra o **Supabase de produção de verdade** — não existe um projeto Supabase separado só para testes. Isso é uma decisão consciente (ver `src/test/integration/helpers.ts`), não um descuido: fica tudo isolado sob um CNPJ reservado (checksum válido, mas obviamente fictício) e um prefixo de código `TESTE-` que nenhum cadastro real produz, com limpeza garantida (`afterAll`) em ordem segura de FK (imports → companies, que em cascata leva certificates/certificate_history/notification_reads). Roda separado de `npm test` (`vitest.integration.config.mts`, arquivos `*.itest.ts`) — nunca é disparado sem rodar explicitamente esse comando.
+
+Cobre exatamente o que os testes unitários não alcançam: constraints únicas de `companies`, o trigger de certificado único vigente + histórico de renovação, a função SQL `certificate_status` via `certificates_view` (em vários cenários de `warning_days`/arquivado), o motor de importação de ponta a ponta (incluindo a resolução de conflito de código), `listNotifications`, e o fluxo de convite/recuperação de senha na Auth API do Supabase (`generateLink` + cascade ao excluir o usuário).
+
+Se algum teste falhar no meio do caminho, rode de novo — a limpeza cobre o estado inicial (`code.like.TESTE-%`), não só o que a própria execução criou.
 
 ## Deploy
 
@@ -243,4 +253,4 @@ Duas formas, ambas em uso:
 
 ## Próximos passos
 
-1. Testes de integração contra um projeto Supabase de teste (companies/certificates/import/notifications/convite end-to-end).
+Sem itens pendentes conhecidos no momento além das [limitações deliberadas](#limitações-atuais) (A3, RBAC granular).
