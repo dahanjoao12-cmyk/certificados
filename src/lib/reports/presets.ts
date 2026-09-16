@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withBasePath } from "@/lib/utils/base-path";
 import type { ReportBase } from "./engine";
 
 export async function saveReportPreset(params: {
@@ -18,7 +17,7 @@ export async function saveReportPreset(params: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   if (!params.name.trim()) {
     return { error: "Informe um nome para o relatório." };
@@ -46,7 +45,7 @@ export async function deleteReportPreset(id: string): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   await supabase.from("report_presets").delete().eq("id", id);
   revalidatePath("/relatorios");

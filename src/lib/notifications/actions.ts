@@ -3,14 +3,13 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { withBasePath } from "@/lib/utils/base-path";
 
 export async function markNotificationRead(certificateId: string): Promise<void> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   await supabase
     .from("notification_reads")
@@ -27,7 +26,7 @@ export async function markAllNotificationsRead(certificateIds: string[]): Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   await supabase
     .from("notification_reads")

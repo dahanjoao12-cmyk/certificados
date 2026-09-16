@@ -7,7 +7,6 @@ import { logAudit } from "@/lib/audit/log";
 import { detectDocumentType } from "@/lib/documents/document";
 import { insertCertificateForCompany } from "@/lib/certificates/create";
 import { companySchema, normalizeCompanyInput } from "./schema";
-import { withBasePath } from "@/lib/utils/base-path";
 import type { CertificateType, CertificateModel } from "@/lib/types/database";
 
 export interface CompanyFormState {
@@ -58,7 +57,7 @@ export async function createCompany(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   const normalized = normalizeCompanyInput(parsed.data);
   const documentType = detectDocumentType(normalized.document);
@@ -92,7 +91,7 @@ export async function createCompany(
   });
 
   revalidatePath("/empresas");
-  redirect(withBasePath(`/empresas/${data.id}`));
+  redirect(`/empresas/${data.id}`);
 }
 
 export async function updateCompany(
@@ -109,7 +108,7 @@ export async function updateCompany(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   const normalized = normalizeCompanyInput(parsed.data);
   const documentType = detectDocumentType(normalized.document);
@@ -133,7 +132,7 @@ export async function updateCompany(
   });
 
   revalidatePath(`/empresas/${companyId}`);
-  redirect(withBasePath(`/empresas/${companyId}`));
+  redirect(`/empresas/${companyId}`);
 }
 
 /** "1"|"2"|"3"|"5" years from today, or a specific custom date -- see the quick-create form. */
@@ -192,7 +191,7 @@ export async function createCompanyWithCertificate(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect(withBasePath("/login"));
+  if (!user) redirect("/login");
 
   const normalized = normalizeCompanyInput(parsed.data);
   const documentType = detectDocumentType(normalized.document);
@@ -237,12 +236,12 @@ export async function createCompanyWithCertificate(
     });
   } catch {
     revalidatePath("/empresas");
-    redirect(withBasePath(`/empresas/${company.id}?erro=certificado`));
+    redirect(`/empresas/${company.id}?erro=certificado`);
   }
 
   revalidatePath("/empresas");
   revalidatePath("/");
-  redirect(withBasePath(`/empresas/${company.id}`));
+  redirect(`/empresas/${company.id}`);
 }
 
 function flattenZodErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {

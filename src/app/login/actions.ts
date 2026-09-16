@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { withBasePath } from "@/lib/utils/base-path";
 
 export interface LoginState {
   error?: string;
@@ -24,11 +23,11 @@ export async function signIn(_prevState: LoginState, formData: FormData): Promis
     return { error: "E-mail ou senha inválidos." };
   }
 
-  redirect(withBasePath(next.startsWith("/") ? next : "/"));
+  redirect(next.startsWith("/") ? next : "/");
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect(withBasePath("/login"));
+  redirect("/login");
 }
