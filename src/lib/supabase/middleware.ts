@@ -3,7 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "./env";
 import { withBasePath } from "@/lib/utils/base-path";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+// /api/cron/notify has no user session (called by the server's system cron,
+// not a browser) -- it authenticates itself via the CRON_SECRET bearer
+// token inside the route handler, so it must not be redirected to /login here.
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/cron/notify"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((path) => pathname.startsWith(path));

@@ -3,12 +3,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCertificateDigestEmails } from "@/lib/notifications/digest";
 
 /**
- * Called daily by Vercel Cron (see vercel.json). No user session exists
- * here, so it needs the service-role client to read past RLS -- protected
- * by CRON_SECRET instead (Vercel sends it as a Bearer token automatically
- * once CRON_SECRET is set as an env var on the project).
+ * Called daily by a scheduler with no user session -- Vercel Cron (see
+ * vercel.json, sends GET) or a plain system crontab hitting this over
+ * curl (GET or POST both work). Needs the service-role client to read past
+ * RLS, protected by CRON_SECRET as a Bearer token instead.
  */
-export async function GET(request: NextRequest) {
+async function handleCronNotify(request: NextRequest) {
   const expected = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
   if (!expected || authHeader !== `Bearer ${expected}`) {
@@ -19,3 +19,5 @@ export async function GET(request: NextRequest) {
   const result = await sendCertificateDigestEmails(supabase);
   return NextResponse.json(result);
 }
+
+export { handleCronNotify as GET, handleCronNotify as POST };
