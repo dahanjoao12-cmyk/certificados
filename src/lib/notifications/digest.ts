@@ -18,6 +18,8 @@ export interface DigestResult {
   recipients: number;
   sent: number;
   failed: number;
+  /** First failure's message, if any -- enough to diagnose without a log dive (Resend/env misconfiguration is the common case). */
+  firstError?: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export async function sendCertificateDigestEmails(supabase: SupabaseClient): Pro
 
   let sent = 0;
   let failed = 0;
+  let firstError: string | undefined;
   for (const recipient of recipients) {
     if (!recipient.email) continue;
     const result = await sendEmail({
@@ -61,9 +64,13 @@ export async function sendCertificateDigestEmails(supabase: SupabaseClient): Pro
       subject: `${rows.length} certificado(s) precisam de atenção`,
       html: certificateDigestEmailHtml({ fullName: recipient.full_name, rows: emailRows, appUrl: appUrl() }),
     });
-    if (result.ok) sent++;
-    else failed++;
+    if (result.ok) {
+      sent++;
+    } else {
+      failed++;
+      firstError ??= result.error;
+    }
   }
 
-  return { alertingCertificates: rows.length, recipients: recipients.length, sent, failed };
+  return { alertingCertificates: rows.length, recipients: recipients.length, sent, failed, firstError };
 }

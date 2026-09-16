@@ -87,6 +87,6 @@ export async function sendDigestNow(): Promise<DigestFormState> {
   }
 
   return {
-    success: `${result.sent} e-mail(s) enviado(s) para ${result.recipients} usuário(s), referente a ${result.alertingCertificates} certificado(s)${result.failed > 0 ? ` (${result.failed} falharam)` : ""}.`,
+    success: `${result.sent} e-mail(s) enviado(s) para ${result.recipients} usuário(s), referente a ${result.alertingCertificates} certificado(s)${result.failed > 0 ? ` (${result.failed} falharam${result.firstError ? `: ${result.firstError}` : ""})` : ""}.`,
   };
 }
