@@ -2,9 +2,52 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/send";
+import { passwordResetEmailHtml } from "@/lib/email/templates";
+import { appUrl } from "@/lib/utils/app-url";
 
 export interface SetPasswordState {
   error?: string;
+}
+
+export interface RequestPasswordResetState {
+  success?: boolean;
+  error?: string;
+}
+
+/**
+ * Always returns the same generic message whether or not the email exists
+ * -- confirming/denying an account's existence to an anonymous caller is
+ * exactly the info a password-reset form should never leak.
+ */
+export async function requestPasswordReset(
+  _prevState: RequestPasswordResetState,
+  formData: FormData
+): Promise<RequestPasswordResetState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) {
+    return { error: "Informe seu e-mail." };
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo: `${appUrl()}/auth/callback?next=/definir-senha` },
+  });
+
+  const resetLink = data?.properties?.action_link;
+  if (!error && resetLink) {
+    const fullName = (data.user?.user_metadata?.full_name as string | undefined) || email;
+    await sendEmail({
+      to: email,
+      subject: "Redefinir senha — Certificados Digitais",
+      html: passwordResetEmailHtml({ fullName, resetLink }),
+    });
+  }
+
+  return { success: true };
 }
 
 /**

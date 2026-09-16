@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signIn, type LoginState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
@@ -25,6 +26,9 @@ export function LoginForm({ next }: { next: string }) {
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Entrando..." : "Entrar"}
       </Button>
+      <Link href="/recuperar-senha" className="block text-center text-sm text-slate-500 hover:text-slate-700">
+        Esqueci minha senha
+      </Link>
     </form>
   );
 }

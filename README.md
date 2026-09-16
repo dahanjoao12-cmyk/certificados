@@ -16,7 +16,8 @@ Este é deliberadamente **um sistema de controle de validade, não um leitor/val
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Supabase e migrations](#supabase-e-migrations)
 - [Cadastro de certificados e aviso de vencimento](#cadastro-de-certificados-e-aviso-de-vencimento)
-- [Notificações internas](#notificações-internas)
+- [Contas de usuário](#contas-de-usuário)
+- [Notificações internas e por e-mail](#notificações-internas-e-por-e-mail)
 - [Importação de planilhas](#importação-de-planilhas)
 - [Relatórios e exportação](#relatórios-e-exportação)
 - [Segurança](#segurança)
@@ -114,10 +115,14 @@ Abra http://localhost:3000. Você precisa aplicar as migrations e criar o primei
 
 ## Variáveis de ambiente
 
-Ver `.env.example`. Três variáveis, todas do painel do Supabase (*Project Settings → API*):
+Ver `.env.example` para o arquivo completo. Resumo:
 
-- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — públicas, usadas pelo client autenticado (respeitam RLS).
-- `SUPABASE_SERVICE_ROLE_KEY` — **secreta**, usada só em código de servidor (`src/lib/supabase/admin.ts`, marcado `server-only`) para a única operação que legitimamente precisa ignorar RLS: criação de usuários pelo admin.
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — do painel do Supabase (*Project Settings → API*), públicas, usadas pelo client autenticado (respeitam RLS).
+- `SUPABASE_SERVICE_ROLE_KEY` — **secreta**, usada só em código de servidor (`src/lib/supabase/admin.ts`, marcado `server-only`) para as operações que legitimamente precisam ignorar RLS: convite/gestão de usuário pelo admin.
+- `RESEND_API_KEY` / `EMAIL_FROM` — conta na [Resend](https://resend.com), usadas para todo e-mail que o sistema manda (convite, redefinição de senha, notificação de vencimento). Sem domínio verificado na Resend, só entrega para o e-mail da própria conta Resend.
+- `CRON_SECRET` — protege `/api/cron/notify` (ver [Notificações](#notificações-internas-e-por-e-mail)). Valor aleatório qualquer, precisa ser o mesmo no agendador (Vercel Cron ou `crontab`).
+- `NEXT_PUBLIC_APP_URL` — URL pública completa do app (já com o sub-caminho, se houver), usada para montar links nos e-mails.
+- `NEXT_PUBLIC_BASE_PATH` — só se o app rodar numa sub-rota de um domínio compartilhado (ex.: `/certificados` atrás de um Nginx com vários sistemas). Vazio = raiz do domínio (caso da Vercel). Ver [Deploy](#deploy).
 
 Nunca commite `.env.local` (já está no `.gitignore`).
 
@@ -154,11 +159,21 @@ A classificação do certificado é automática, a partir de **data atual + data
 - **Vencido** — data de validade já passou.
 - **Arquivado** — arquivado manualmente (some das contagens de "ativos", mas fica no histórico).
 
-## Notificações internas
+## Contas de usuário
 
-Não existe uma tabela de "notificações geradas" nem envio de e-mail/WhatsApp ainda: um certificado em `VENCENDO`/`VENCE_HOJE`/`VENCIDO` (e não arquivado) **é** uma notificação, derivada ao vivo de `certificates_view`. A tabela `notification_reads` só guarda quais certificados cada usuário já marcou como lidos — por isso uma notificação "permanece disponível até ser visualizada ou marcada como lida", por usuário.
+Sem senha definida pelo admin: criar um usuário em `/usuarios` (admin) gera um convite via `supabase.auth.admin.generateLink({ type: "invite" })` e o sistema manda seu **próprio** e-mail (template + Resend) com o link — não usa o mailer nativo do Supabase, para manter tudo no mesmo remetente/marca.
 
-UI: sino no topo com contagem de não lidas e lista rápida (`src/components/layout/notifications-bell.tsx`), mais uma página completa em `/notificacoes` com "marcar como lida" individual ou em lote.
+"Esqueci minha senha" (`/recuperar-senha`) funciona igual, com `type: "recovery"`. Por segurança, a resposta é sempre a mesma mensagem genérica, exista ou não aquele e-mail cadastrado (nunca confirma/nega existência de conta).
+
+Os dois fluxos convergem no mesmo lugar: o link do e-mail cai em `/auth/callback` (troca o `code` por uma sessão via `exchangeCodeForSession`) e redireciona para `/definir-senha`, onde a pessoa escolhe a senha (`supabase.auth.updateUser({ password })`) já autenticada.
+
+## Notificações internas e por e-mail
+
+Não existe uma tabela de "notificações geradas": um certificado em `VENCENDO`/`VENCE_HOJE`/`VENCIDO` (e não arquivado) **é** uma notificação, derivada ao vivo de `certificates_view`. A tabela `notification_reads` só guarda quais certificados cada usuário já marcou como lidos — por isso uma notificação "permanece disponível até ser visualizada ou marcada como lida", por usuário.
+
+UI interna: sino no topo com contagem de não lidas e lista rápida (`src/components/layout/notifications-bell.tsx`), mais uma página completa em `/notificacoes` com "marcar como lida" individual ou em lote.
+
+E-mail: um resumo diário (`/api/cron/notify`, protegido por `CRON_SECRET`) para todos os usuários ativos, listando tudo que está `VENCENDO`/`VENCE_HOJE`/`VENCIDO` no momento — reenviado todo dia de propósito (é um lembrete de prazo, não um alerta único). Também dá para disparar na hora em `/configuracoes` (botão "Enviar notificações por e-mail agora", admin). Na Vercel isso é agendado por `vercel.json`; num servidor próprio precisa de um cron do sistema chamando essa rota.
 
 ## Importação de planilhas
 
@@ -201,29 +216,31 @@ npm test
 - Parsing de datas em planilha (`dd/mm/yyyy`, `yyyy-mm-dd`, datas impossíveis).
 - Geração de XLSX/CSV: CNPJ e código permanecem texto (nunca notação científica), datas viram células de data reais.
 
-O que **não** está coberto por testes automatizados (precisa de um projeto Supabase real para testar e não foi montado neste repositório): CRUD de empresas/certificados de ponta a ponta, RLS, o motor de deduplicação de importação contra um banco real, geração de relatório via `certificates_view`, notificações. Antes de ir para produção, valide manualmente pelo menos o fluxo: cadastrar empresa → cadastrar certificado → ver aparecer no dashboard/notificações conforme o vencimento → arquivar → exportar.
+O que **não** está coberto por testes automatizados: CRUD de empresas/certificados de ponta a ponta, RLS, o motor de deduplicação de importação, geração de relatório via `certificates_view`, notificações, convite/redefinição de senha. Isso já é viável de escrever hoje (existe um projeto Supabase real, inclusive com dados reais importados) — é o próximo item da lista abaixo.
 
 ## Deploy
 
-Recomendado: Vercel (Route Handlers de importação/exportação rodam como funções serverless Node.js — não use Edge Runtime nelas).
+Duas formas, ambas em uso:
 
+**Vercel (mais simples):** Route Handlers de importação/exportação rodam como funções serverless Node.js (não use Edge Runtime nelas).
 1. Crie o projeto Supabase de produção, aplique as migrations, crie o primeiro admin.
-2. Configure as três variáveis de ambiente no Vercel (mesmas do `.env.example`).
-3. Deploy normal de um projeto Next.js (`vercel --prod` ou integração com o repositório Git).
+2. Configure as variáveis de ambiente no painel do projeto (mesmas do `.env.example`; deixe `NEXT_PUBLIC_BASE_PATH` vazio).
+3. Deploy normal (`vercel --prod` ou integração com o repositório Git — cada push já dispara).
+4. Notificação por e-mail automática: `vercel.json` já tem o cron configurado (`/api/cron/notify`, uma vez por dia).
+
+**Servidor próprio (EC2 + Nginx, por exemplo), numa sub-rota de um domínio compartilhado:**
+1. Mesmos passos de Supabase acima.
+2. Defina `NEXT_PUBLIC_BASE_PATH=/nome-da-rota` (ex.: `/certificados`) e `NEXT_PUBLIC_APP_URL` já com esse caminho — isso é lido tanto em build time (`next.config.ts`) quanto em runtime.
+3. `npm run build && npm run start -- -p PORTA`. O Nginx só precisa repassar a rota pro Next (`proxy_pass` simples, sem `proxy_redirect` — o app já resolve o próprio prefixo em tudo, incluindo redirects de login/Server Actions).
+4. No Supabase, *Authentication → URL Configuration*: Site URL e Redirect URLs com a URL pública completa (com o sub-caminho).
+5. Notificação por e-mail automática: sem cron da Vercel aqui — precisa de um `crontab` do sistema chamando `/api/cron/notify` com `Authorization: Bearer <CRON_SECRET>` (GET ou POST, ambos aceitos).
 
 ## Limitações atuais
 
-- **Conflito de código na importação** é reportado, mas não há ainda uma tela de "manter existente vs. usar importado" linha a linha — a linha fica marcada como conflito e nada é sobrescrito.
-- **Certificados A3** só têm cadastro manual (não há e nunca haverá leitura de token/smartcard neste sistema — é um controle de validade, não um leitor de certificado).
-- **Sem envio de notificação por e-mail/WhatsApp** ainda — só o alerta interno (sino + `/notificacoes`) está implementado.
-- **Sem criação de usuário via convite por e-mail**: o admin define uma senha inicial diretamente; não há fluxo de "esqueci minha senha" nem convite; reset de senha hoje é feito pelo painel do Supabase.
-- **RBAC simples**: só `admin`/`user`, sem permissões granulares por módulo.
+- **Certificados A3** só têm cadastro manual (decisão deliberada — não há e nunca haverá leitura de token/smartcard neste sistema, que é um controle de validade, não um leitor de certificado).
+- **RBAC simples**: só `admin`/`user`, sem permissões granulares por módulo (também deliberado, não uma lacuna a preencher).
+- **Sem testes de integração** contra um Supabase real (ver seção Testes).
 
 ## Próximos passos
 
-Ordem sugerida:
-
-1. UI de resolução de conflito linha a linha na importação.
-2. Notificação por e-mail (o alerta interno já existe; isso é só o canal adicional).
-3. Convite de usuário por e-mail (Supabase Auth já suporta `inviteUserByEmail`).
-4. Testes de integração contra um projeto Supabase de teste (companies/certificates/import/notifications end-to-end).
+1. Testes de integração contra um projeto Supabase de teste (companies/certificates/import/notifications/convite end-to-end).

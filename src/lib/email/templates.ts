@@ -42,6 +42,18 @@ export function inviteEmailHtml(params: { fullName: string; inviteLink: string }
   );
 }
 
+export function passwordResetEmailHtml(params: { fullName: string; resetLink: string }): string {
+  return baseLayout(
+    "Redefinir senha",
+    `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Olá, ${escapeHtml(params.fullName)}. Recebemos um pedido para redefinir a senha da sua conta no sistema de certificados digitais.</p>
+     <p style="margin:0 0 24px;font-size:14px;line-height:1.6;">Clique no botão abaixo para escolher uma nova senha:</p>
+     <p style="margin:0 0 24px;">
+       <a href="${params.resetLink}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:600;">Redefinir senha</a>
+     </p>
+     <p style="margin:0;font-size:12px;color:#64748b;">Se você não pediu essa redefinição, pode ignorar este e-mail -- sua senha atual continua valendo.</p>`
+  );
+}
+
 export function certificateDigestEmailHtml(params: {
   fullName: string;
   rows: { companyName: string; companyCode: string; validTo: string; statusLabel: string }[];
