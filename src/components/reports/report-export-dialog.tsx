@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import type { ReportBase } from "@/lib/reports/engine";
 import type { ColumnDef } from "@/lib/certificates/columns";
+import { withBasePath } from "@/lib/utils/base-path";
 
 const IGNORED_PARAMS = new Set(["base", "cols", "sort", "dir", "page", "pageSize", "presetId"]);
 
@@ -59,7 +60,7 @@ export function ReportExportDialog({
       if (sort) filters.sort = sort;
       if (dir) filters.dir = dir;
 
-      const res = await fetch("/api/reports/export", {
+      const res = await fetch(withBasePath("/api/reports/export"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ base, format, columns: orderedColumns, fileName, filters }),

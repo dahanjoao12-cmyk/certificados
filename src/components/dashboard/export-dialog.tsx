@@ -6,6 +6,7 @@ import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select } from "@/components/ui/input";
 import { EXPORTABLE_CERTIFICATE_COLUMNS } from "@/lib/certificates/export-value";
+import { withBasePath } from "@/lib/utils/base-path";
 
 function filtersFromSearchParams(searchParams: URLSearchParams): Record<string, string> {
   const filters: Record<string, string> = {};
@@ -55,7 +56,7 @@ export function ExportDialog({ defaultVisibleColumns }: { defaultVisibleColumns:
     setError(null);
     try {
       const orderedColumns = EXPORTABLE_CERTIFICATE_COLUMNS.filter((c) => selected.has(c.key)).map((c) => c.key);
-      const res = await fetch("/api/export/certificates", {
+      const res = await fetch(withBasePath("/api/export/certificates"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

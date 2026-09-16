@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { withBasePath } from "@/lib/utils/base-path";
 
 export interface SetPasswordState {
   error?: string;
@@ -30,12 +31,12 @@ export async function setInitialPassword(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     return { error: "Não foi possível definir a senha. Tente novamente." };
   }
 
-  redirect("/");
+  redirect(withBasePath("/"));
 }

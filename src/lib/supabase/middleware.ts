@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "./env";
+import { withBasePath } from "@/lib/utils/base-path";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
@@ -40,13 +41,13 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!user && !isPublicPath(pathname)) {
-    const loginUrl = new URL("/login", request.url);
+    const loginUrl = new URL(withBasePath("/login"), request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL(withBasePath("/"), request.url));
   }
 
   return response;

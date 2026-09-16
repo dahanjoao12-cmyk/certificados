@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { formatDocument } from "@/lib/documents/document";
+import { withBasePath } from "@/lib/utils/base-path";
 import type { Company } from "@/lib/types/database";
 
 export function GlobalSearch() {
@@ -32,7 +33,7 @@ export function GlobalSearch() {
       }
       setLoading(true);
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(withBasePath(`/api/search?q=${encodeURIComponent(query)}`));
         const data = await res.json();
         setResults(data.results ?? []);
         setOpen(true);

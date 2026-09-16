@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit/log";
 import { insertCertificateForCompany } from "./create";
 import { certificateSchema, normalizeCertificateInput } from "./schema";
+import { withBasePath } from "@/lib/utils/base-path";
 
 export interface CertificateFormState {
   error?: string;
@@ -52,7 +53,7 @@ export async function createCertificate(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   const normalized = normalizeCertificateInput(parsed.data);
 
@@ -68,7 +69,7 @@ export async function createCertificate(
   }
 
   revalidatePath(`/empresas/${companyId}`);
-  redirect(`/empresas/${companyId}`);
+  redirect(withBasePath(`/empresas/${companyId}`));
 }
 
 export async function updateCertificate(
@@ -86,7 +87,7 @@ export async function updateCertificate(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   const { data: before } = await supabase
     .from("certificates")
@@ -122,7 +123,7 @@ export async function updateCertificate(
   });
 
   revalidatePath(`/empresas/${companyId}`);
-  redirect(`/empresas/${companyId}`);
+  redirect(withBasePath(`/empresas/${companyId}`));
 }
 
 export async function archiveCertificate(certificateId: string, companyId: string): Promise<void> {
@@ -130,7 +131,7 @@ export async function archiveCertificate(certificateId: string, companyId: strin
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   await supabase.from("certificates").update({ archived: true }).eq("id", certificateId);
 
@@ -157,7 +158,7 @@ export async function restoreCertificate(certificateId: string, companyId: strin
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   await supabase.from("certificates").update({ archived: false }).eq("id", certificateId);
 
@@ -184,7 +185,7 @@ export async function deleteCertificate(certificateId: string, companyId: string
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(withBasePath("/login"));
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (profile?.role !== "admin") {

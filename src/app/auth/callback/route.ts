@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { withBasePath } from "@/lib/utils/base-path";
 
 /**
  * Landing point for every Supabase auth email link (invite, password
@@ -17,9 +18,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next.startsWith("/") ? next : "/"}`);
+      return NextResponse.redirect(`${origin}${withBasePath(next.startsWith("/") ? next : "/")}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=convite_invalido`);
+  return NextResponse.redirect(`${origin}${withBasePath("/login?error=convite_invalido")}`);
 }

@@ -6,6 +6,7 @@ import { UploadCloud, ArrowRight, CheckCircle2, AlertTriangle } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { IMPORT_TARGET_FIELDS } from "@/lib/import/fields";
+import { withBasePath } from "@/lib/utils/base-path";
 import type { ImportRowOutcome, RowResolution } from "@/lib/import/process";
 
 type Step = "upload" | "mapping" | "preview" | "done";
@@ -67,7 +68,7 @@ export function ImportWizard() {
     try {
       const formData = new FormData();
       formData.append("file", selected);
-      const res = await fetch("/api/import/analyze", { method: "POST", body: formData });
+      const res = await fetch(withBasePath("/api/import/analyze"), { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao ler o arquivo.");
       setAnalysis(data);
@@ -92,7 +93,7 @@ export function ImportWizard() {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("mapping", JSON.stringify(mapping));
-      const res = await fetch("/api/import/preview", { method: "POST", body: formData });
+      const res = await fetch(withBasePath("/api/import/preview"), { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao gerar prévia.");
       setPreview(data);
@@ -115,7 +116,7 @@ export function ImportWizard() {
       formData.append("mapping", JSON.stringify(mapping));
       formData.append("fileName", file.name);
       formData.append("resolutions", JSON.stringify(resolutions));
-      const res = await fetch("/api/import/commit", { method: "POST", body: formData });
+      const res = await fetch(withBasePath("/api/import/commit"), { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao importar.");
       setResult(data);
