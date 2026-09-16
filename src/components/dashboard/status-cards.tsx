@@ -7,6 +7,7 @@ interface CardDef {
   label: string;
   value: number;
   activeClasses: string;
+  bgClasses: string;
   query: URLSearchParams;
 }
 
@@ -39,6 +40,7 @@ export function StatusCards({
       label: "Ativos",
       value: counts.active,
       activeClasses: "border-slate-900",
+      bgClasses: "bg-white",
       query: buildQuery({ archived: "false" }),
     },
     {
@@ -46,6 +48,7 @@ export function StatusCards({
       label: "Em dia",
       value: counts.em_dia,
       activeClasses: "border-emerald-600",
+      bgClasses: "bg-emerald-50",
       query: buildQuery({ status: "EM_DIA" }),
     },
     {
@@ -53,6 +56,7 @@ export function StatusCards({
       label: "Vencendo",
       value: counts.vencendo,
       activeClasses: "border-amber-600",
+      bgClasses: "bg-amber-50",
       query: buildQuery({ status: "VENCENDO" }),
     },
     {
@@ -60,6 +64,7 @@ export function StatusCards({
       label: "Vencidos",
       value: counts.vencido,
       activeClasses: "border-red-600",
+      bgClasses: "bg-red-50",
       query: buildQuery({ status: "VENCIDO" }),
     },
     {
@@ -67,6 +72,7 @@ export function StatusCards({
       label: "Arquivados",
       value: counts.arquivado,
       activeClasses: "border-gray-500",
+      bgClasses: "bg-white",
       query: buildQuery({ archived: "true" }),
     },
   ];
@@ -84,7 +90,8 @@ export function StatusCards({
             key={card.key}
             href={`?${card.query.toString()}`}
             className={cn(
-              "rounded-lg border bg-white px-4 py-3 shadow-sm transition-colors hover:border-slate-400",
+              "rounded-lg border px-4 py-3 shadow-sm transition-colors hover:border-slate-400",
+              card.bgClasses,
               isActive ? card.activeClasses : "border-slate-200"
             )}
           >
