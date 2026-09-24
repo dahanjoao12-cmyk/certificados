@@ -1,8 +1,10 @@
-import { FileCheck2 } from "lucide-react";
+import { FileCheck2, Stamp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getCertificateStatusCounts } from "@/lib/certificates/queries";
 import { getCalendarRange, listCalendarItems, formatMonthLabel, type CalendarView } from "@/lib/certificates/calendar";
+import { getAlvaraStatusCounts } from "@/lib/alvaras/queries";
+import { listAlvaraCalendarItems } from "@/lib/alvaras/calendar-items";
 import { listNotifications } from "@/lib/notifications/queries";
 import { ModuleCards, type ModuleCardDef } from "@/components/dashboard/module-cards";
 import { VencimentosCalendar } from "@/components/dashboard/vencimentos-calendar";
@@ -32,11 +34,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
   const supabase = await createClient();
   const user = await getCurrentUser();
 
-  const [counts, calendarItems, notifications] = await Promise.all([
+  const [counts, alvaraCounts, certificateCalendarItems, alvaraCalendarItems, notifications] = await Promise.all([
     getCertificateStatusCounts(supabase),
+    getAlvaraStatusCounts(supabase),
     listCalendarItems(supabase, { from: range.from, to: range.to, includeOverdue: showOverdue }),
+    listAlvaraCalendarItems(supabase, { from: range.from, to: range.to, includeOverdue: showOverdue }),
     listNotifications(supabase, user.id),
   ]);
+  const calendarItems = [...certificateCalendarItems, ...alvaraCalendarItems];
 
   const moduleCards: ModuleCardDef[] = [
     {
@@ -46,6 +51,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
       icon: FileCheck2,
       href: "/painel-certificados",
       colorClasses: "bg-blue-50 text-blue-600",
+    },
+    {
+      key: "alvaras",
+      label: "Alvarás",
+      value: alvaraCounts.active,
+      icon: Stamp,
+      href: "/alvaras",
+      colorClasses: "bg-amber-50 text-amber-600",
     },
   ];
 

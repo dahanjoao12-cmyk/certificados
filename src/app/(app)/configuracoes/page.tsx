@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Users } from "lucide-react";
+import { Bell, Users, Stamp } from "lucide-react";
 
 const CARDS = [
   {
@@ -13,6 +13,12 @@ const CARDS = [
     icon: Users,
     title: "Grupos de usuários",
     description: "Defina quais módulos cada grupo cobre — e aplique a vários usuários de uma vez.",
+  },
+  {
+    href: "/configuracoes/alvara-tipos",
+    icon: Stamp,
+    title: "Tipos de Alvará",
+    description: "Cadastro dos tipos de alvará (nome e cor) usados na tabela e no calendário do Dashboard.",
   },
 ];
 

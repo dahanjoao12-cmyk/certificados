@@ -5,8 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDocument } from "@/lib/documents/document";
 import { StatusBadge } from "@/components/certificates/status-badge";
 import { CertificateActions } from "@/components/certificates/certificate-actions";
+import { CompanyAlvarasSection } from "@/components/alvaras/company-alvaras-section";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { ButtonLink } from "@/components/ui/button";
-import type { Company, CertificateWithCompany, CertificateHistoryEntry } from "@/lib/types/database";
+import type { Company, CertificateWithCompany, CertificateHistoryEntry, AlvaraWithCompany } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +50,7 @@ export default async function CompanyDetailPage({
     .maybeSingle();
   if (!company) notFound();
 
-  const [{ data: certificates }, { data: history }] = await Promise.all([
+  const [{ data: certificates }, { data: history }, { data: alvaras }, user] = await Promise.all([
     supabase
       .from("certificates_view")
       .select("*")
@@ -60,9 +62,16 @@ export default async function CompanyDetailPage({
       .eq("company_id", id)
       .order("changed_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("alvaras_view")
+      .select("*")
+      .eq("company_id", id)
+      .order("status_priority", { ascending: true }),
+    getCurrentUser(),
   ]);
 
   const rows = (certificates ?? []) as CertificateWithCompany[];
+  const alvaraRows = (alvaras ?? []) as AlvaraWithCompany[];
   const current = rows.find((c) => c.is_current && !c.archived) ?? rows.find((c) => c.is_current);
   const typedCompany = company as Company & { responsible_profile: { full_name: string } | null };
   const responsibleLabel = typedCompany.responsible_profile?.full_name ?? typedCompany.responsible ?? "-";
@@ -141,6 +150,8 @@ export default async function CompanyDetailPage({
           <p className="text-sm text-slate-500">Nenhum certificado cadastrado para este cliente.</p>
         )}
       </div>
+
+      <CompanyAlvarasSection companyId={id} alvaras={alvaraRows} isAdmin={user.profile.role === "admin"} />
 
       <div className="rounded-md border border-slate-200 bg-white">
         <div className="border-b border-slate-100 px-5 py-3">

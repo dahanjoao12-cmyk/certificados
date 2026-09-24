@@ -231,3 +231,123 @@ export interface PermissionGroupModule {
   group_id: string;
   module_key: string;
 }
+
+export interface AlvaraType {
+  id: string;
+  name: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Manual pre-issuance states -- no `valid_to` yet. */
+export type AlvaraManualStatus = "AGUARDANDO" | "CGSIM";
+
+/**
+ * Full status union: the two manual pre-issuance states, "DEFINITIVO" (issued,
+ * never expires), the date-driven states (mirrors CertificateStatus), and
+ * ARQUIVADO. Which branch applies is computed by the SQL `alvara_status()`
+ * function -- see supabase/migrations/0012_alvaras.sql.
+ */
+export type AlvaraStatus =
+  | AlvaraManualStatus
+  | "EM_DIA"
+  | "VENCENDO"
+  | "VENCE_HOJE"
+  | "VENCIDO"
+  | "DEFINITIVO"
+  | "ARQUIVADO";
+
+export type AlvaraOrigin = "manual" | "import";
+
+export interface Alvara {
+  id: string;
+  company_id: string;
+  type_id: string;
+  manual_status: AlvaraManualStatus;
+  issued: boolean;
+  is_permanent: boolean;
+  valid_to: string | null;
+  prioritario: boolean;
+  archived: boolean;
+  condicionantes_total: number;
+  condicionantes_atendidas: number;
+  municipality: string | null;
+  uf: string | null;
+  notes: string | null;
+  origin: AlvaraOrigin;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  updated_by: string | null;
+  /** Path inside the private "alvara-anexos" Storage bucket; null when there's no attachment. */
+  attachment_path: string | null;
+  /** Original file name, for display -- attachment_path is an opaque generated path. */
+  attachment_name: string | null;
+  attachment_size: number | null;
+  attachment_uploaded_at: string | null;
+}
+
+/** Row shape of the `alvaras_view` (alvará + denormalized type/company fields + computed status). */
+export interface AlvaraWithCompany extends Alvara {
+  status: AlvaraStatus;
+  status_priority: number;
+  days_remaining: number | null;
+  type_name: string;
+  type_color: string;
+  company_code: string;
+  company_document: string;
+  company_document_type: DocumentType;
+  company_corporate_name: string;
+  company_trade_name: string | null;
+  company_short_name: string | null;
+  company_active: boolean;
+}
+
+export type AlvaraHistoryAction = "created" | "updated" | "issued" | "archived" | "restored" | "deleted";
+
+export interface AlvaraHistoryEntry {
+  id: string;
+  alvara_id: string | null;
+  company_id: string;
+  action: AlvaraHistoryAction;
+  field_changed: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string | null;
+  changed_at: string;
+}
+
+export interface AlvaraThresholdSettings {
+  warning_days: number;
+}
+
+export type AlvaraImportStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface AlvaraImportRun {
+  id: string;
+  file_name: string;
+  mapping: Record<string, string>;
+  total_rows: number;
+  alvaras_created: number;
+  alvaras_updated: number;
+  types_created: number;
+  errors: number;
+  status: AlvaraImportStatus;
+  imported_by: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export type AlvaraImportRowResult = "alvara_created" | "alvara_updated" | "type_created" | "error" | "skipped";
+
+export interface AlvaraImportRow {
+  id: string;
+  import_id: string;
+  row_number: number;
+  raw_data: Record<string, unknown>;
+  result: AlvaraImportRowResult;
+  message: string | null;
+  company_id: string | null;
+  alvara_id: string | null;
+}

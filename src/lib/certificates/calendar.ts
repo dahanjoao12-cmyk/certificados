@@ -54,7 +54,7 @@ export function formatMonthLabel(view: CalendarView, referenceDate: Date, from: 
   return format(referenceDate, "MMMM 'de' yyyy", { locale: ptBR });
 }
 
-export type CalendarCategory = "certificados";
+export type CalendarCategory = "certificados" | "alvaras";
 
 export interface CalendarItem {
   id: string;
@@ -65,9 +65,9 @@ export interface CalendarItem {
 }
 
 /**
- * Vencimentos visible in the given range. Only "certificados" exists today --
- * this shape (one entry per module) is what lets Alvarás plug in later as a
- * second category without redesigning the grid or the legend.
+ * Vencimentos de certificado visíveis no intervalo. Alvarás tem sua própria
+ * função equivalente (src/lib/alvaras/calendar-items.ts:listAlvaraCalendarItems)
+ * -- o chamador concatena os dois arrays antes de passar pro calendário.
  */
 export async function listCalendarItems(
   supabase: SupabaseClient,

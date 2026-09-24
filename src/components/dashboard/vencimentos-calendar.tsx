@@ -9,14 +9,17 @@ import { shiftReferenceDate, type CalendarItem, type CalendarView } from "@/lib/
 
 const CATEGORY_LABELS: Record<CalendarItem["category"], string> = {
   certificados: "Certificados",
+  alvaras: "Alvarás",
 };
 
 const CATEGORY_DOT_CLASSES: Record<CalendarItem["category"], string> = {
   certificados: "bg-blue-600",
+  alvaras: "bg-amber-600",
 };
 
 const CATEGORY_CHIP_CLASSES: Record<CalendarItem["category"], string> = {
   certificados: "bg-blue-50 text-blue-700 hover:bg-blue-100",
+  alvaras: "bg-amber-50 text-amber-700 hover:bg-amber-100",
 };
 
 function formatDate(value: string): string {

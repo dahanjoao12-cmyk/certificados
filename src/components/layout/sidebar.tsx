@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileCheck2,
+  Stamp,
   Building2,
   Building,
   FileBarChart,
@@ -23,6 +24,7 @@ const DASHBOARD_ITEM = { href: "/", label: "Dashboard", icon: LayoutDashboard, e
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof FileCheck2; exact?: boolean }[] = [
   { href: "/painel-certificados", label: "Certificados", icon: FileCheck2 },
+  { href: "/alvaras", label: "Alvarás", icon: Stamp },
   { href: "/notificacoes", label: "Notificações", icon: Bell },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/importar", label: "Importar", icon: UploadCloud },

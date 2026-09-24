@@ -10,6 +10,7 @@ export interface ModuleDef {
 export const AVAILABLE_MODULES: ModuleDef[] = [
   { key: "clientes", label: "Clientes" },
   { key: "certificados", label: "Certificados Digitais" },
+  { key: "alvaras", label: "Alvarás" },
   { key: "relatorios", label: "Relatórios" },
   { key: "importar", label: "Importar" },
   { key: "usuarios", label: "Usuários" },
