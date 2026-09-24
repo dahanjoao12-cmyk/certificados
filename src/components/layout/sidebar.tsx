@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils/cn";
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof FileCheck2; exact?: boolean }[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/certificados", label: "Certificados", icon: FileCheck2 },
+  { href: "/painel-certificados", label: "Certificados", icon: FileCheck2 },
   { href: "/notificacoes", label: "Notificações", icon: Bell },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/importar", label: "Importar", icon: UploadCloud },

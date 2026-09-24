@@ -249,7 +249,7 @@ export async function createCompanyWithCertificate(
 
   revalidatePath("/clientes");
   revalidatePath("/");
-  revalidatePath("/certificados");
+  revalidatePath("/painel-certificados");
   redirect(`/clientes/${company.id}`);
 }
 

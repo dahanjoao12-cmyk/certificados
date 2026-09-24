@@ -215,7 +215,7 @@ export default async function CompanyDetailPage({
       </div>
 
       <div>
-        <Link href="/certificados" className="text-xs text-slate-500 hover:text-slate-900">
+        <Link href="/painel-certificados" className="text-xs text-slate-500 hover:text-slate-900">
           ← Voltar para certificados
         </Link>
       </div>

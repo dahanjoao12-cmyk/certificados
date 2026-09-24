@@ -44,7 +44,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
       label: "Certificados Digitais",
       value: counts.active,
       icon: FileCheck2,
-      href: "/certificados",
+      href: "/painel-certificados",
       colorClasses: "bg-blue-50 text-blue-600",
     },
   ];

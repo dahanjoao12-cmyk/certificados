@@ -60,7 +60,7 @@ export async function saveCertificateThresholds(
 
   revalidatePath("/configuracoes");
   revalidatePath("/");
-  revalidatePath("/certificados");
+  revalidatePath("/painel-certificados");
   return { success: true };
 }
 

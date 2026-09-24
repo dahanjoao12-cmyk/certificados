@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
       // links working. source/destination are auto-prefixed with basePath.
       { source: "/empresas/:path*", destination: "/clientes/:path*", permanent: false },
       { source: "/empresas", destination: "/clientes", permanent: false },
+      // The certificates table briefly lived at "/certificados" -- renamed to
+      // "/painel-certificados" to avoid colliding visually with the
+      // NEXT_PUBLIC_BASE_PATH sub-path (also "/certificados"), which stacked
+      // into a confusing "/certificados/certificados" URL.
+      { source: "/certificados", destination: "/painel-certificados", permanent: false },
     ];
   },
 };
