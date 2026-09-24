@@ -9,7 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function EditCompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: company } = await supabase.from("companies").select("*").eq("id", id).maybeSingle();
+  const [{ data: company }, { data: users }] = await Promise.all([
+    supabase.from("companies").select("*").eq("id", id).maybeSingle(),
+    supabase.from("profiles").select("id, full_name").eq("active", true).order("full_name"),
+  ]);
 
   if (!company) notFound();
 
@@ -18,11 +21,11 @@ export default async function EditCompanyPage({ params }: { params: Promise<{ id
   return (
     <div className="max-w-2xl space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">Editar empresa</h1>
+        <h1 className="text-xl font-semibold text-slate-900">Editar cliente</h1>
         <p className="text-sm text-slate-500">{(company as Company).corporate_name}</p>
       </div>
       <div className="rounded-md border border-slate-200 bg-white p-6">
-        <CompanyForm action={boundAction} company={company as Company} />
+        <CompanyForm action={boundAction} company={company as Company} users={users ?? []} />
       </div>
     </div>
   );

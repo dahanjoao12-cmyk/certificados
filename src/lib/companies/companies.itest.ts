@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from "vitest";
-import { testAdminClient, cleanupTestData, TEST_DOCUMENT, testCode } from "@/test/integration/helpers";
+import { testAdminClient, cleanupTestData, anyRealProfileId, TEST_DOCUMENT, testCode } from "@/test/integration/helpers";
 
 describe("companies (integration)", () => {
   afterAll(cleanupTestData);
@@ -102,5 +102,41 @@ describe("companies (integration)", () => {
       .eq("certificate_id", certificate!.id)
       .maybeSingle();
     expect(orphanHistory).toBeNull();
+  });
+
+  it("stores the Fase 1 'cliente' fields (address, inscrições, whatsapp, responsible_user_id) and joins the responsible profile by name", async () => {
+    const supabase = testAdminClient();
+    const responsibleId = await anyRealProfileId();
+
+    const { data: created, error } = await supabase
+      .from("companies")
+      .insert({
+        code: testCode("cliente-campos"),
+        document: "99999900000414",
+        document_type: "cnpj",
+        corporate_name: "Cliente Campos Novos LTDA",
+        active: true,
+        origin: "manual",
+        state_registration: "123.456.789",
+        municipal_tax_registration: "987654",
+        whatsapp: "(21) 99999-0000",
+        zip_code: "20040-004",
+        address_street: "Avenida Rio Branco",
+        address_number: "99",
+        address_complement: "5º andar",
+        neighborhood: "Centro",
+        responsible_user_id: responsibleId,
+      })
+      .select("*, responsible_profile:profiles!companies_responsible_user_id_fkey(full_name)")
+      .single();
+
+    expect(error).toBeNull();
+    expect(created?.state_registration).toBe("123.456.789");
+    expect(created?.municipal_tax_registration).toBe("987654");
+    expect(created?.whatsapp).toBe("(21) 99999-0000");
+    expect(created?.zip_code).toBe("20040-004");
+    expect(created?.neighborhood).toBe("Centro");
+    expect(created?.responsible_user_id).toBe(responsibleId);
+    expect(created?.responsible_profile?.full_name).toBeTruthy();
   });
 });

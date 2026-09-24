@@ -16,9 +16,11 @@ const DURATION_OPTIONS = [
 
 export function CompanyWithCertificateForm({
   defaultWarningDays,
+  users,
   onCancel,
 }: {
   defaultWarningDays: number;
+  users: { id: string; full_name: string }[];
   onCancel?: () => void;
 }) {
   const [state, formAction, pending] = useActionState<CompanyFormState, FormData>(createCompanyWithCertificate, {});
@@ -34,7 +36,7 @@ export function CompanyWithCertificateForm({
       )}
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">Empresa</h3>
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">Cliente</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -72,9 +74,56 @@ export function CompanyWithCertificateForm({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="state_registration">Inscrição Estadual</Label>
+              <Input id="state_registration" name="state_registration" />
+            </div>
+            <div>
+              <Label htmlFor="municipal_tax_registration">Inscrição Fiscal Municipal</Label>
+              <Input id="municipal_tax_registration" name="municipal_tax_registration" />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="responsible_user_id">Responsável</Label>
+            <Select id="responsible_user_id" name="responsible_user_id" defaultValue="">
+              <option value="">Nenhum — visível para todos</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="zip_code">CEP</Label>
+              <Input id="zip_code" name="zip_code" placeholder="00000-000" />
+            </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="municipality">Município</Label>
+              <Label htmlFor="address_street">Logradouro</Label>
+              <Input id="address_street" name="address_street" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="address_number">Número</Label>
+              <Input id="address_number" name="address_number" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label htmlFor="address_complement">Complemento</Label>
+              <Input id="address_complement" name="address_complement" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <Label htmlFor="neighborhood">Bairro</Label>
+              <Input id="neighborhood" name="neighborhood" />
+            </div>
+            <div>
+              <Label htmlFor="municipality">Cidade</Label>
               <Input id="municipality" name="municipality" />
             </div>
             <div>
@@ -84,14 +133,10 @@ export function CompanyWithCertificateForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="responsible">Responsável interno</Label>
-              <Input id="responsible" name="responsible" />
-            </div>
-            <div>
-              <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" name="phone" />
+              <Label htmlFor="whatsapp">WhatsApp</Label>
+              <Input id="whatsapp" name="whatsapp" placeholder="(21) 99999-9999" />
             </div>
             <div>
               <Label htmlFor="email">E-mail</Label>
@@ -107,7 +152,7 @@ export function CompanyWithCertificateForm({
 
           <label className="flex items-center gap-2 text-sm text-slate-700">
             <input type="checkbox" name="active" defaultChecked className="h-4 w-4 rounded border-slate-300" />
-            Empresa ativa
+            Cliente ativo
           </label>
         </div>
       </div>
@@ -179,7 +224,7 @@ export function CompanyWithCertificateForm({
             Cancelar
           </Button>
         ) : (
-          <ButtonLink href="/empresas" variant="secondary">
+          <ButtonLink href="/clientes" variant="secondary">
             Cancelar
           </ButtonLink>
         )}

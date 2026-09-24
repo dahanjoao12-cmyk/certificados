@@ -15,9 +15,10 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   const filters = parseCompanyFilters(params);
   const supabase = await createClient();
-  const [{ rows, total }, thresholds] = await Promise.all([
+  const [{ rows, total }, thresholds, { data: users }] = await Promise.all([
     listCompanies(supabase, filters),
     getCertificateThresholds(supabase),
+    supabase.from("profiles").select("id, full_name").eq("active", true).order("full_name"),
   ]);
 
   const currentQuery = new URLSearchParams(
@@ -30,10 +31,10 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Empresas</h1>
-          <p className="text-sm text-slate-500">Cadastro das empresas do escritório.</p>
+          <h1 className="text-xl font-semibold text-slate-900">Clientes</h1>
+          <p className="text-sm text-slate-500">Cadastro dos clientes do escritório.</p>
         </div>
-        <NewCompanyModal defaultWarningDays={thresholds.warning_days} />
+        <NewCompanyModal defaultWarningDays={thresholds.warning_days} users={users ?? []} />
       </div>
 
       <form className="flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-white p-4" method="get">
@@ -81,13 +82,13 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
             {rows.map((company) => (
               <tr key={company.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                 <td className="px-4 py-2.5 font-medium text-slate-900">
-                  <Link href={`/empresas/${company.id}`} className="hover:underline">
+                  <Link href={`/clientes/${company.id}`} className="hover:underline">
                     {company.code}
                   </Link>
                 </td>
                 <td className="px-4 py-2.5 text-slate-700">{formatDocument(company.document)}</td>
                 <td className="px-4 py-2.5 text-slate-700">
-                  <Link href={`/empresas/${company.id}`} className="hover:underline">
+                  <Link href={`/clientes/${company.id}`} className="hover:underline">
                     {company.corporate_name}
                   </Link>
                   {company.short_name && <span className="ml-1 text-xs text-slate-500">({company.short_name})</span>}
@@ -106,7 +107,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
             {rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">
-                  Nenhuma empresa encontrada.
+                  Nenhum cliente encontrado.
                 </td>
               </tr>
             )}

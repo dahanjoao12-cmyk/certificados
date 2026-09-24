@@ -71,7 +71,7 @@ export function GlobalSearch() {
                   onClick={() => {
                     setOpen(false);
                     setQuery("");
-                    router.push(`/empresas/${company.id}`);
+                    router.push(`/clientes/${company.id}`);
                   }}
                   className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-slate-50"
                 >

@@ -1,38 +1,45 @@
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { createClient } from "@/lib/supabase/server";
-import { getCertificateThresholds } from "@/lib/settings/thresholds";
-import { ThresholdsForm } from "@/components/settings/thresholds-form";
-import { SendDigestButton } from "@/components/settings/send-digest-button";
-import { Label } from "@/components/ui/input";
+import Link from "next/link";
+import { Bell, Users } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+const CARDS = [
+  {
+    href: "/configuracoes/notificacoes",
+    icon: Bell,
+    title: "Notificações de Vencimento",
+    description: "Prazo de aviso e destinatários de certificados — com prazo por certificado onde faz sentido.",
+  },
+  {
+    href: "/configuracoes/grupos",
+    icon: Users,
+    title: "Grupos de usuários",
+    description: "Defina quais módulos cada grupo cobre — e aplique a vários usuários de uma vez.",
+  },
+];
 
-export default async function SettingsPage() {
-  const user = await getCurrentUser();
-  const supabase = await createClient();
-  const thresholds = await getCertificateThresholds(supabase);
-
+export default function SettingsHubPage() {
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Configurações</h1>
-        <p className="text-sm text-slate-500">Regras usadas em todo o sistema para calcular o status dos certificados.</p>
+        <p className="text-sm text-slate-500">Regras e cadastros usados em todo o sistema.</p>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-6">
-        <ThresholdsForm thresholds={thresholds} readOnly={user.profile.role !== "admin"} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {CARDS.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="rounded-md border border-slate-200 bg-white p-4 hover:border-slate-400 hover:bg-slate-50"
+            >
+              <Icon size={18} className="mb-2 text-slate-500" />
+              <p className="text-sm font-medium text-slate-900">{card.title}</p>
+              <p className="mt-1 text-xs text-slate-500">{card.description}</p>
+            </Link>
+          );
+        })}
       </div>
-
-      {user.profile.role === "admin" && (
-        <div className="rounded-md border border-slate-200 bg-white p-6">
-          <Label>Notificação por e-mail</Label>
-          <p className="mb-3 text-xs text-slate-500">
-            Um resumo é enviado automaticamente todo dia para todos os usuários ativos, com os certificados
-            vencendo/vencidos no momento. Use o botão abaixo para disparar agora, sem esperar o horário programado.
-          </p>
-          <SendDigestButton />
-        </div>
-      )}
     </div>
   );
 }

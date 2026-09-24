@@ -18,7 +18,15 @@ export const COMPANY_COLUMNS: ColumnDef[] = [
   { key: "situation", label: "Situação" },
   { key: "responsible", label: "Responsável" },
   { key: "phone", label: "Telefone" },
+  { key: "whatsapp", label: "WhatsApp" },
   { key: "email", label: "E-mail" },
+  { key: "state_registration", label: "Inscrição Estadual" },
+  { key: "municipal_tax_registration", label: "Inscrição Fiscal Municipal" },
+  { key: "zip_code", label: "CEP" },
+  { key: "address_street", label: "Logradouro" },
+  { key: "address_number", label: "Número" },
+  { key: "address_complement", label: "Complemento" },
+  { key: "neighborhood", label: "Bairro" },
   { key: "active", label: "Ativa" },
   { key: "origin", label: "Origem do cadastro" },
   { key: "notes", label: "Observações" },
@@ -63,8 +71,24 @@ export function getCompanyExportValue(row: Company, key: string): ExportCell {
       return { value: row.responsible };
     case "phone":
       return { value: row.phone };
+    case "whatsapp":
+      return { value: row.whatsapp };
     case "email":
       return { value: row.email };
+    case "state_registration":
+      return { value: row.state_registration };
+    case "municipal_tax_registration":
+      return { value: row.municipal_tax_registration };
+    case "zip_code":
+      return { value: row.zip_code, isText: true };
+    case "address_street":
+      return { value: row.address_street };
+    case "address_number":
+      return { value: row.address_number, isText: true };
+    case "address_complement":
+      return { value: row.address_complement };
+    case "neighborhood":
+      return { value: row.neighborhood };
     case "active":
       return { value: row.active ? "Sim" : "Não" };
     case "origin":

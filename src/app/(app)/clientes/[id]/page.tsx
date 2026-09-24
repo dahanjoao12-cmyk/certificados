@@ -41,7 +41,11 @@ export default async function CompanyDetailPage({
   const { erro } = await searchParams;
   const supabase = await createClient();
 
-  const { data: company } = await supabase.from("companies").select("*").eq("id", id).maybeSingle();
+  const { data: company } = await supabase
+    .from("companies")
+    .select("*, responsible_profile:profiles!companies_responsible_user_id_fkey(full_name)")
+    .eq("id", id)
+    .maybeSingle();
   if (!company) notFound();
 
   const [{ data: certificates }, { data: history }] = await Promise.all([
@@ -60,13 +64,14 @@ export default async function CompanyDetailPage({
 
   const rows = (certificates ?? []) as CertificateWithCompany[];
   const current = rows.find((c) => c.is_current && !c.archived) ?? rows.find((c) => c.is_current);
-  const typedCompany = company as Company;
+  const typedCompany = company as Company & { responsible_profile: { full_name: string } | null };
+  const responsibleLabel = typedCompany.responsible_profile?.full_name ?? typedCompany.responsible ?? "-";
 
   return (
     <div className="space-y-6">
       {erro === "certificado" && (
         <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-inset ring-amber-200">
-          A empresa foi criada, mas não foi possível salvar o certificado. Cadastre-o abaixo.
+          O cliente foi criado, mas não foi possível salvar o certificado. Cadastre-o abaixo.
         </div>
       )}
       <div className="flex items-start justify-between">
@@ -74,8 +79,8 @@ export default async function CompanyDetailPage({
           <h1 className="text-xl font-semibold text-slate-900">{typedCompany.corporate_name}</h1>
           {typedCompany.short_name && <p className="text-sm text-slate-500">{typedCompany.short_name}</p>}
         </div>
-        <ButtonLink href={`/empresas/${id}/editar`} variant="secondary" size="sm">
-          <Pencil size={13} /> Editar empresa
+        <ButtonLink href={`/clientes/${id}/editar`} variant="secondary" size="sm">
+          <Pencil size={13} /> Editar cliente
         </ButtonLink>
       </div>
 
@@ -97,14 +102,14 @@ export default async function CompanyDetailPage({
         </div>
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Responsável</p>
-          <p className="mt-0.5 text-sm font-medium text-slate-900">{typedCompany.responsible ?? "-"}</p>
+          <p className="mt-0.5 text-sm font-medium text-slate-900">{responsibleLabel}</p>
         </div>
       </div>
 
       <div className="rounded-md border border-slate-200 bg-white p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-900">Certificado atual</h2>
-          <ButtonLink href={`/empresas/${id}/certificados/novo`} size="sm">
+          <ButtonLink href={`/clientes/${id}/certificados/novo`} size="sm">
             <Plus size={13} /> {current ? "Renovar certificado" : "Novo certificado"}
           </ButtonLink>
         </div>
@@ -133,7 +138,7 @@ export default async function CompanyDetailPage({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-slate-500">Nenhum certificado cadastrado para esta empresa.</p>
+          <p className="text-sm text-slate-500">Nenhum certificado cadastrado para este cliente.</p>
         )}
       </div>
 

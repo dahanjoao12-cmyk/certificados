@@ -36,11 +36,12 @@ export default async function DashboardPage({
   }
   const visibleColumns = resolveVisibleColumns(visibleKeys);
 
-  const [user, counts, { rows, total }, thresholds] = await Promise.all([
+  const [user, counts, { rows, total }, thresholds, { data: users }] = await Promise.all([
     getCurrentUser(),
     getCertificateStatusCounts(supabase),
     listCertificates(supabase, filters),
     getCertificateThresholds(supabase),
+    supabase.from("profiles").select("id, full_name").eq("active", true).order("full_name"),
   ]);
 
   const currentQuery = new URLSearchParams(
@@ -56,7 +57,7 @@ export default async function DashboardPage({
           <h1 className="text-xl font-semibold text-slate-900">Certificados Digitais</h1>
           <p className="text-sm text-slate-500">Gerencie os certificados digitais dos clientes.</p>
         </div>
-        <NewCompanyModal defaultWarningDays={thresholds.warning_days} />
+        <NewCompanyModal defaultWarningDays={thresholds.warning_days} users={users ?? []} />
       </div>
 
       <StatusCards

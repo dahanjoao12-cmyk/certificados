@@ -21,14 +21,14 @@ export function CertificateRowActions({
   return (
     <div className="flex items-center gap-1">
       <Link
-        href={`/empresas/${companyId}`}
+        href={`/clientes/${companyId}`}
         title="Ver empresa"
         className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
       >
         <Eye size={14} />
       </Link>
       <Link
-        href={`/empresas/${companyId}/certificados/${certificateId}/editar`}
+        href={`/clientes/${companyId}/certificados/${certificateId}/editar`}
         title="Editar"
         className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
       >

@@ -8,6 +8,14 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || undefined;
 
 const nextConfig: NextConfig = {
   basePath,
+  async redirects() {
+    return [
+      // "Empresas" was renamed to "Clientes" -- keep old bookmarked/shared
+      // links working. source/destination are auto-prefixed with basePath.
+      { source: "/empresas/:path*", destination: "/clientes/:path*", permanent: false },
+      { source: "/empresas", destination: "/clientes", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;

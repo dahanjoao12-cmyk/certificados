@@ -17,6 +17,8 @@ export interface Profile {
   active: boolean;
   created_at: string;
   updated_at: string;
+  /** Cadastro-only for now -- no screen enforces module access based on this yet. */
+  group_id: string | null;
 }
 
 export type DocumentType = "cnpj" | "cpf";
@@ -33,9 +35,19 @@ export interface Company {
   municipality: string | null;
   uf: string | null;
   situation: string | null;
+  /** Legacy free-text responsible name. Kept for old rows; new writes go to responsible_user_id. */
   responsible: string | null;
+  responsible_user_id: string | null;
   phone: string | null;
+  whatsapp: string | null;
   email: string | null;
+  state_registration: string | null;
+  municipal_tax_registration: string | null;
+  zip_code: string | null;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  neighborhood: string | null;
   notes: string | null;
   origin: CompanyOrigin;
   active: boolean;
@@ -193,4 +205,29 @@ export interface NotificationRead {
   certificate_id: string;
   user_id: string;
   read_at: string;
+}
+
+export interface OrganizationInfo {
+  cnpj: string | null;
+  corporate_name: string | null;
+  trade_name: string | null;
+  zip_code: string | null;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  uf: string | null;
+}
+
+export interface PermissionGroup {
+  id: string;
+  name: string;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface PermissionGroupModule {
+  group_id: string;
+  module_key: string;
 }

@@ -14,19 +14,40 @@ export interface CompanyFormState {
   fieldErrors?: Record<string, string>;
 }
 
+/**
+ * A field the current form variant simply doesn't render (e.g. the
+ * quick-create modal has no "phone" input) makes formData.get() return
+ * `null`, not `undefined` -- and zod's `.optional()` only treats `undefined`
+ * as absent, rejecting `null` with a useless "Invalid input". Coerce every
+ * missing field to "" so both form variants (full CompanyForm and the
+ * quick-create CompanyWithCertificateForm) validate the same way regardless
+ * of which optional inputs they happen to render.
+ */
+function field(formData: FormData, name: string): string {
+  return (formData.get(name) as string | null) ?? "";
+}
+
 function parseForm(formData: FormData) {
   return companySchema.safeParse({
-    code: formData.get("code"),
-    document: formData.get("document"),
-    corporate_name: formData.get("corporate_name"),
-    trade_name: formData.get("trade_name"),
-    short_name: formData.get("short_name"),
-    municipality: formData.get("municipality"),
-    uf: formData.get("uf"),
-    responsible: formData.get("responsible"),
-    phone: formData.get("phone"),
-    email: formData.get("email"),
-    notes: formData.get("notes"),
+    code: field(formData, "code"),
+    document: field(formData, "document"),
+    corporate_name: field(formData, "corporate_name"),
+    trade_name: field(formData, "trade_name"),
+    short_name: field(formData, "short_name"),
+    municipality: field(formData, "municipality"),
+    uf: field(formData, "uf"),
+    responsible_user_id: field(formData, "responsible_user_id"),
+    phone: field(formData, "phone"),
+    whatsapp: field(formData, "whatsapp"),
+    email: field(formData, "email"),
+    state_registration: field(formData, "state_registration"),
+    municipal_tax_registration: field(formData, "municipal_tax_registration"),
+    zip_code: field(formData, "zip_code"),
+    address_street: field(formData, "address_street"),
+    address_number: field(formData, "address_number"),
+    address_complement: field(formData, "address_complement"),
+    neighborhood: field(formData, "neighborhood"),
+    notes: field(formData, "notes"),
     active: formData.get("active") === "on",
   });
 }
@@ -62,7 +83,7 @@ export async function createCompany(
   const normalized = normalizeCompanyInput(parsed.data);
   const documentType = detectDocumentType(normalized.document);
   // "Situação" is not a free-text field in the form -- it just mirrors the
-  // "Empresa ativa" checkbox, so nobody has to type "ativa" on every company.
+  // "Cliente ativo" checkbox, so nobody has to type "ativa" on every cliente.
   const situation = normalized.active ? "ativa" : "inativa";
 
   const { data, error } = await supabase
@@ -87,11 +108,11 @@ export async function createCompany(
     action: "create",
     entityType: "company",
     entityId: data.id,
-    description: `criou a empresa ${normalized.corporate_name} (código ${normalized.code})`,
+    description: `criou o cliente ${normalized.corporate_name} (código ${normalized.code})`,
   });
 
-  revalidatePath("/empresas");
-  redirect(`/empresas/${data.id}`);
+  revalidatePath("/clientes");
+  redirect(`/clientes/${data.id}`);
 }
 
 export async function updateCompany(
@@ -128,11 +149,11 @@ export async function updateCompany(
     action: "update",
     entityType: "company",
     entityId: companyId,
-    description: `atualizou o cadastro da empresa ${normalized.corporate_name}`,
+    description: `atualizou o cadastro do cliente ${normalized.corporate_name}`,
   });
 
-  revalidatePath(`/empresas/${companyId}`);
-  redirect(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
+  redirect(`/clientes/${companyId}`);
 }
 
 /** "1"|"2"|"3"|"5" years from today, or a specific custom date -- see the quick-create form. */
@@ -148,28 +169,15 @@ function resolveValidTo(duration: string, customDate: string): string | null {
 }
 
 /**
- * Quick-create used by the "Nova empresa" modal: registers the company and
- * its first certificate in one step, since in practice every new company
+ * Quick-create used by the "Novo cliente" modal: registers the cliente and
+ * its first certificate in one step, since in practice every new cliente
  * being added already has a certificate to record.
  */
 export async function createCompanyWithCertificate(
   _prevState: CompanyFormState,
   formData: FormData
 ): Promise<CompanyFormState> {
-  const parsed = companySchema.safeParse({
-    code: formData.get("code"),
-    document: formData.get("document"),
-    corporate_name: formData.get("corporate_name"),
-    trade_name: formData.get("trade_name"),
-    short_name: formData.get("short_name"),
-    municipality: formData.get("municipality"),
-    uf: formData.get("uf"),
-    responsible: formData.get("responsible"),
-    phone: formData.get("phone"),
-    email: formData.get("email"),
-    notes: formData.get("notes"),
-    active: formData.get("active") === "on",
-  });
+  const parsed = parseForm(formData);
   if (!parsed.success) {
     return { fieldErrors: flattenZodErrors(parsed.error) };
   }
@@ -219,7 +227,7 @@ export async function createCompanyWithCertificate(
     action: "create",
     entityType: "company",
     entityId: company.id,
-    description: `criou a empresa ${normalized.corporate_name} (código ${normalized.code})`,
+    description: `criou o cliente ${normalized.corporate_name} (código ${normalized.code})`,
   });
 
   try {
@@ -235,13 +243,13 @@ export async function createCompanyWithCertificate(
       origin: "manual",
     });
   } catch {
-    revalidatePath("/empresas");
-    redirect(`/empresas/${company.id}?erro=certificado`);
+    revalidatePath("/clientes");
+    redirect(`/clientes/${company.id}?erro=certificado`);
   }
 
-  revalidatePath("/empresas");
+  revalidatePath("/clientes");
   revalidatePath("/");
-  redirect(`/empresas/${company.id}`);
+  redirect(`/clientes/${company.id}`);
 }
 
 function flattenZodErrors(error: { issues: { path: PropertyKey[]; message: string }[] }) {

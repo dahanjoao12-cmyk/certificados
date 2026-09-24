@@ -67,7 +67,7 @@ export function NotificationsBell({ items }: { items: NotificationItem[] }) {
                     key={certificate.id}
                     className="flex items-start justify-between gap-2 border-b border-slate-50 px-3 py-2.5 last:border-0"
                   >
-                    <Link href={`/empresas/${certificate.company_id}`} onClick={() => setOpen(false)} className="min-w-0 flex-1">
+                    <Link href={`/clientes/${certificate.company_id}`} onClick={() => setOpen(false)} className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900">{certificate.company_corporate_name}</p>
                       <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
                         Vence {formatDate(certificate.valid_to)}

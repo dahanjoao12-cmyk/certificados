@@ -98,7 +98,7 @@ export function CertificateForm({
         <Button type="submit" disabled={pending}>
           {pending ? "Salvando..." : "Salvar"}
         </Button>
-        <ButtonLink href={`/empresas/${companyId}`} variant="secondary">
+        <ButtonLink href={`/clientes/${companyId}`} variant="secondary">
           Cancelar
         </ButtonLink>
       </div>

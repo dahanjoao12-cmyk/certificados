@@ -67,8 +67,8 @@ export async function createCertificate(
     return { error: "Não foi possível salvar o certificado. Tente novamente." };
   }
 
-  revalidatePath(`/empresas/${companyId}`);
-  redirect(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
+  redirect(`/clientes/${companyId}`);
 }
 
 export async function updateCertificate(
@@ -121,8 +121,8 @@ export async function updateCertificate(
     description: "atualizou os dados de um certificado",
   });
 
-  revalidatePath(`/empresas/${companyId}`);
-  redirect(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
+  redirect(`/clientes/${companyId}`);
 }
 
 export async function archiveCertificate(certificateId: string, companyId: string): Promise<void> {
@@ -149,7 +149,7 @@ export async function archiveCertificate(certificateId: string, companyId: strin
     description: "arquivou um certificado",
   });
 
-  revalidatePath(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
 }
 
 export async function restoreCertificate(certificateId: string, companyId: string): Promise<void> {
@@ -176,7 +176,7 @@ export async function restoreCertificate(certificateId: string, companyId: strin
     description: "restaurou um certificado arquivado",
   });
 
-  revalidatePath(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
 }
 
 export async function deleteCertificate(certificateId: string, companyId: string): Promise<void> {
@@ -201,5 +201,5 @@ export async function deleteCertificate(certificateId: string, companyId: string
     description: "excluiu um certificado",
   });
 
-  revalidatePath(`/empresas/${companyId}`);
+  revalidatePath(`/clientes/${companyId}`);
 }

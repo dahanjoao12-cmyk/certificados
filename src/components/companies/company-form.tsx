@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { Input, Label, FieldError, Textarea } from "@/components/ui/input";
+import { Input, Label, FieldError, Select, Textarea } from "@/components/ui/input";
 import type { Company } from "@/lib/types/database";
 import type { CompanyFormState } from "@/lib/companies/actions";
 
@@ -11,10 +11,13 @@ type Action = (prevState: CompanyFormState, formData: FormData) => Promise<Compa
 export function CompanyForm({
   action,
   company,
+  users,
   onCancel,
 }: {
   action: Action;
   company?: Company;
+  /** Active users, for the "Responsável" dropdown. */
+  users: { id: string; full_name: string }[];
   /** When set (e.g. rendered inside a modal), replaces the "Cancelar" link with a plain close callback. */
   onCancel?: () => void;
 }) {
@@ -65,31 +68,92 @@ export function CompanyForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="sm:col-span-2">
-          <Label htmlFor="municipality">Município</Label>
-          <Input id="municipality" name="municipality" defaultValue={company?.municipality ?? ""} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="state_registration">Inscrição Estadual</Label>
+          <Input id="state_registration" name="state_registration" defaultValue={company?.state_registration ?? ""} />
         </div>
         <div>
-          <Label htmlFor="uf">UF</Label>
-          <Input id="uf" name="uf" maxLength={2} defaultValue={company?.uf ?? ""} />
-          <FieldError>{errors.uf}</FieldError>
+          <Label htmlFor="municipal_tax_registration">Inscrição Fiscal Municipal</Label>
+          <Input
+            id="municipal_tax_registration"
+            name="municipal_tax_registration"
+            defaultValue={company?.municipal_tax_registration ?? ""}
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div>
+        <Label htmlFor="responsible_user_id">Responsável</Label>
+        <Select id="responsible_user_id" name="responsible_user_id" defaultValue={company?.responsible_user_id ?? ""}>
+          <option value="">Nenhum — visível para todos</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.full_name}
+            </option>
+          ))}
+        </Select>
+        {company?.responsible && !company.responsible_user_id && (
+          <p className="mt-1 text-xs text-slate-500">
+            Responsável anterior (texto livre): <span className="font-medium">{company.responsible}</span> — selecione
+            um usuário acima para atualizar.
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="responsible">Responsável interno</Label>
-          <Input id="responsible" name="responsible" defaultValue={company?.responsible ?? ""} />
-        </div>
-        <div>
-          <Label htmlFor="phone">Telefone</Label>
-          <Input id="phone" name="phone" defaultValue={company?.phone ?? ""} />
+          <Label htmlFor="whatsapp">WhatsApp</Label>
+          <Input id="whatsapp" name="whatsapp" defaultValue={company?.whatsapp ?? ""} placeholder="(21) 99999-9999" />
         </div>
         <div>
           <Label htmlFor="email">E-mail</Label>
           <Input id="email" name="email" type="email" defaultValue={company?.email ?? ""} />
           <FieldError>{errors.email}</FieldError>
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="phone">Telefone</Label>
+        <Input id="phone" name="phone" defaultValue={company?.phone ?? ""} />
+      </div>
+
+      <div className="border-t border-slate-100 pt-5">
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">Endereço</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="zip_code">CEP</Label>
+            <Input id="zip_code" name="zip_code" defaultValue={company?.zip_code ?? ""} placeholder="00000-000" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="address_street">Logradouro</Label>
+            <Input id="address_street" name="address_street" defaultValue={company?.address_street ?? ""} />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="address_number">Número</Label>
+            <Input id="address_number" name="address_number" defaultValue={company?.address_number ?? ""} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label htmlFor="address_complement">Complemento</Label>
+            <Input id="address_complement" name="address_complement" defaultValue={company?.address_complement ?? ""} />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="neighborhood">Bairro</Label>
+            <Input id="neighborhood" name="neighborhood" defaultValue={company?.neighborhood ?? ""} />
+          </div>
+          <div>
+            <Label htmlFor="municipality">Cidade</Label>
+            <Input id="municipality" name="municipality" defaultValue={company?.municipality ?? ""} />
+          </div>
+          <div>
+            <Label htmlFor="uf">UF</Label>
+            <Input id="uf" name="uf" maxLength={2} defaultValue={company?.uf ?? ""} />
+            <FieldError>{errors.uf}</FieldError>
+          </div>
         </div>
       </div>
 
@@ -100,7 +164,7 @@ export function CompanyForm({
 
       <label className="flex items-center gap-2 text-sm text-slate-700">
         <input type="checkbox" name="active" defaultChecked={company?.active ?? true} className="h-4 w-4 rounded border-slate-300" />
-        Empresa ativa
+        Cliente ativo
       </label>
 
       <div className="flex gap-2 border-t border-slate-100 pt-4">
@@ -112,7 +176,7 @@ export function CompanyForm({
             Cancelar
           </Button>
         ) : (
-          <ButtonLink href={company ? `/empresas/${company.id}` : "/empresas"} variant="secondary">
+          <ButtonLink href={company ? `/clientes/${company.id}` : "/clientes"} variant="secondary">
             Cancelar
           </ButtonLink>
         )}

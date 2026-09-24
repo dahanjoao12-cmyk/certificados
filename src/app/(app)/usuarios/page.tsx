@@ -11,10 +11,13 @@ export default async function UsersPage() {
   requireAdmin(currentUser);
 
   const supabase = await createClient();
-  const { data: profiles } = await supabase.from("profiles").select("*").order("full_name");
+  const [{ data: profiles }, { data: groups }] = await Promise.all([
+    supabase.from("profiles").select("*").order("full_name"),
+    supabase.from("permission_groups").select("id, name").order("name"),
+  ]);
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Usuários</h1>
         <p className="text-sm text-slate-500">Gerencie quem tem acesso ao sistema.</p>
@@ -32,7 +35,7 @@ export default async function UsersPage() {
               <th className="px-4 py-2.5">Nome</th>
               <th className="px-4 py-2.5">E-mail</th>
               <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5">Perfil / Ações</th>
+              <th className="px-4 py-2.5">Perfil / Grupo / Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -55,6 +58,8 @@ export default async function UsersPage() {
                     profileId={profile.id}
                     role={profile.role}
                     active={profile.active}
+                    groupId={profile.group_id}
+                    groups={groups ?? []}
                     isSelf={profile.id === currentUser.id}
                   />
                 </td>

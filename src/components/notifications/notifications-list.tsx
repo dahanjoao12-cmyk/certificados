@@ -45,7 +45,7 @@ export function NotificationsList({ items }: { items: NotificationItem[] }) {
             key={certificate.id}
             className={cn("flex items-center justify-between gap-3 px-4 py-3", isRead && "opacity-60")}
           >
-            <Link href={`/empresas/${certificate.company_id}`} className="min-w-0 flex-1">
+            <Link href={`/clientes/${certificate.company_id}`} className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900">{certificate.company_corporate_name}</p>
               <p className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                 Código {certificate.company_code} · Vence {formatDate(certificate.valid_to)}

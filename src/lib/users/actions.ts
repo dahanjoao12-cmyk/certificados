@@ -117,3 +117,21 @@ export async function setUserRole(profileId: string, role: "admin" | "user"): Pr
 
   revalidatePath("/usuarios");
 }
+
+/** Cadastro-only for now (see 0011_permission_groups.sql) -- no screen enforces this group's modules yet. */
+export async function setUserGroup(profileId: string, groupId: string | null): Promise<void> {
+  const { supabase, user, isAdmin } = await requireAdminCaller();
+  if (!user || !isAdmin) throw new Error("Apenas administradores podem gerenciar usuários.");
+
+  await supabase.from("profiles").update({ group_id: groupId }).eq("id", profileId);
+
+  await logAudit(supabase, {
+    userId: user.id,
+    action: "change_user_group",
+    entityType: "profile",
+    entityId: profileId,
+    description: groupId ? "atribuiu um grupo a um usuário" : "removeu o grupo de um usuário",
+  });
+
+  revalidatePath("/usuarios");
+}
