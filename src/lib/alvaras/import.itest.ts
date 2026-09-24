@@ -39,8 +39,7 @@ describe("processAlvaraImportRows (integration)", () => {
       Vencimento: "vencimento",
       Prioritario: "prioritario",
       Arquivado: "arquivado",
-      "Condicionantes Total": "condicionantes_total",
-      "Condicionantes Atendidas": "condicionantes_atendidas",
+      Metragem: "metragem_m2",
       Municipio: "municipio",
       UF: "uf",
       Lembretes: "lembretes",
@@ -55,8 +54,7 @@ describe("processAlvaraImportRows (integration)", () => {
         Vencimento: "",
         Prioritario: "Não",
         Arquivado: "Não",
-        "Condicionantes Total": "0",
-        "Condicionantes Atendidas": "0",
+        Metragem: "",
         Municipio: "Rio de Janeiro",
         UF: "RJ",
         Lembretes: "",
@@ -69,8 +67,7 @@ describe("processAlvaraImportRows (integration)", () => {
         Vencimento: "30/04/2026",
         Prioritario: "Sim",
         Arquivado: "Não",
-        "Condicionantes Total": "3",
-        "Condicionantes Atendidas": "5",
+        Metragem: "120.5",
         Municipio: "Niterói",
         UF: "RJ",
         Lembretes: "",
@@ -83,8 +80,7 @@ describe("processAlvaraImportRows (integration)", () => {
         Vencimento: "",
         Prioritario: "",
         Arquivado: "",
-        "Condicionantes Total": "",
-        "Condicionantes Atendidas": "",
+        Metragem: "",
         Municipio: "",
         UF: "",
         Lembretes: "",
@@ -127,6 +123,7 @@ describe("processAlvaraImportRows (integration)", () => {
     expect(comData.is_permanent).toBe(false);
     expect(comData.valid_to).toBe("2026-04-30");
     expect(comData.prioritario).toBe(true);
-    expect(comData.condicionantes_atendidas).toBeLessThanOrEqual(comData.condicionantes_total);
+    expect(comData.metragem_m2).toBe(120.5);
+    expect(pendente.metragem_m2).toBeNull();
   });
 });

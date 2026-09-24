@@ -27,8 +27,8 @@ export function getAlvaraExportValue(row: AlvaraWithCompany, key: string): Expor
       return { value: row.archived || row.days_remaining === null ? null : row.days_remaining };
     case "prioritario":
       return { value: row.prioritario ? "Sim" : "Não" };
-    case "condicionantes":
-      return { value: `${row.condicionantes_atendidas}/${row.condicionantes_total}`, isText: true };
+    case "metragem_m2":
+      return { value: row.metragem_m2 };
     case "municipality":
       return { value: row.municipality };
     case "uf":
@@ -59,7 +59,7 @@ export const EXPORTABLE_ALVARA_COLUMNS: { key: string; label: string }[] = [
   { key: "valid_to", label: "Vencimento" },
   { key: "days_remaining", label: "Dias restantes" },
   { key: "prioritario", label: "Prioritário" },
-  { key: "condicionantes", label: "Condicionantes" },
+  { key: "metragem_m2", label: "Metragem (m²)" },
   { key: "municipality", label: "Município" },
   { key: "uf", label: "UF" },
   { key: "notes", label: "Lembretes" },

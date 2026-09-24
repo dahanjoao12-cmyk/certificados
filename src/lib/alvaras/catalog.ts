@@ -33,9 +33,14 @@ export async function createAlvaraType(
 
   const name = String(formData.get("name") ?? "").trim();
   const color = String(formData.get("color") ?? "#2563eb").trim();
+  const sharedAttachment = formData.get("shared_attachment_by_municipality") === "on";
   if (!name) return { error: "Informe o nome do tipo." };
 
-  const { data, error } = await supabase.from("alvara_types").insert({ name, color }).select("id").single();
+  const { data, error } = await supabase
+    .from("alvara_types")
+    .insert({ name, color, shared_attachment_by_municipality: sharedAttachment })
+    .select("id")
+    .single();
   if (error) {
     if (error.code === "23505") return { error: "Já existe um tipo de alvará com esse nome." };
     return { error: "Não foi possível salvar o tipo de alvará." };
@@ -64,9 +69,13 @@ export async function updateAlvaraType(
 
   const name = String(formData.get("name") ?? "").trim();
   const color = String(formData.get("color") ?? "#2563eb").trim();
+  const sharedAttachment = formData.get("shared_attachment_by_municipality") === "on";
   if (!name) return { error: "Informe o nome do tipo." };
 
-  const { error } = await supabase.from("alvara_types").update({ name, color }).eq("id", typeId);
+  const { error } = await supabase
+    .from("alvara_types")
+    .update({ name, color, shared_attachment_by_municipality: sharedAttachment })
+    .eq("id", typeId);
   if (error) {
     if (error.code === "23505") return { error: "Já existe um tipo de alvará com esse nome." };
     return { error: "Não foi possível salvar as alterações." };

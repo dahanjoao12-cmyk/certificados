@@ -17,11 +17,13 @@ export function AttachmentSection({
   companyId,
   attachmentName,
   attachmentSize,
+  sharedFromMunicipality,
 }: {
   alvaraId: string;
   companyId: string;
   attachmentName: string | null;
   attachmentSize: number | null;
+  sharedFromMunicipality?: boolean;
 }) {
   const uploadAction = uploadAlvaraAttachment.bind(null, alvaraId, companyId);
   const [state, formAction, pending] = useActionState<AttachmentFormState, FormData>(uploadAction, {});
@@ -32,6 +34,13 @@ export function AttachmentSection({
       <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-700">
         <Paperclip size={13} /> Anexo (PDF, JPG, PNG ou WEBP -- máx. 10MB)
       </p>
+
+      {sharedFromMunicipality && (
+        <p className="mb-2 text-xs text-slate-500">
+          Usando o anexo comum já cadastrado para este município (TLE) -- envie um arquivo abaixo só se este alvará
+          precisar de um anexo próprio, diferente dos demais.
+        </p>
+      )}
 
       {attachmentName ? (
         <div className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
@@ -49,19 +58,21 @@ export function AttachmentSection({
             >
               <Download size={14} />
             </a>
-            <button
-              type="button"
-              title="Remover"
-              disabled={removing}
-              onClick={() => {
-                if (confirm("Remover o anexo deste alvará?")) {
-                  startRemoving(() => removeAlvaraAttachment(alvaraId, companyId));
-                }
-              }}
-              className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-700"
-            >
-              <Trash2 size={14} />
-            </button>
+            {!sharedFromMunicipality && (
+              <button
+                type="button"
+                title="Remover"
+                disabled={removing}
+                onClick={() => {
+                  if (confirm("Remover o anexo deste alvará?")) {
+                    startRemoving(() => removeAlvaraAttachment(alvaraId, companyId));
+                  }
+                }}
+                className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-red-700"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
         </div>
       ) : (

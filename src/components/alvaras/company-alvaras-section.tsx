@@ -42,8 +42,8 @@ export function CompanyAlvarasSection({
                   {alvara.attachment_name && <Paperclip size={12} className="text-slate-400" />}
                 </p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {alvara.valid_to ? `Vence ${formatDate(alvara.valid_to)}` : "Sem data de vencimento"} · Condicionantes{" "}
-                  {alvara.condicionantes_atendidas}/{alvara.condicionantes_total}
+                  {alvara.valid_to ? `Vence ${formatDate(alvara.valid_to)}` : "Sem data de vencimento"}
+                  {alvara.metragem_m2 !== null ? ` · ${alvara.metragem_m2} m²` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-3">

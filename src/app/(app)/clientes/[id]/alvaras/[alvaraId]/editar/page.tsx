@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AlvaraForm } from "@/components/alvaras/alvara-form";
 import { AttachmentSection } from "@/components/alvaras/attachment-section";
 import { updateAlvara } from "@/lib/alvaras/actions";
-import { listAlvaraTypes } from "@/lib/alvaras/queries";
+import { listAlvaraTypes, resolveEffectiveAttachment } from "@/lib/alvaras/queries";
 import type { Alvara } from "@/lib/types/database";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,13 @@ export default async function EditAlvaraPage({
 
   if (!company || !alvara) notFound();
 
+  const type = types.find((t) => t.id === (alvara as Alvara).type_id);
+  const effectiveAttachment = await resolveEffectiveAttachment(
+    supabase,
+    alvara as Alvara,
+    type?.shared_attachment_by_municipality ?? false
+  );
+
   const boundAction = updateAlvara.bind(null, alvaraId, id);
 
   return (
@@ -38,8 +45,9 @@ export default async function EditAlvaraPage({
       <AttachmentSection
         alvaraId={alvaraId}
         companyId={id}
-        attachmentName={(alvara as Alvara).attachment_name}
-        attachmentSize={(alvara as Alvara).attachment_size}
+        attachmentName={effectiveAttachment?.name ?? null}
+        attachmentSize={effectiveAttachment?.size ?? null}
+        sharedFromMunicipality={effectiveAttachment?.shared ?? false}
       />
     </div>
   );

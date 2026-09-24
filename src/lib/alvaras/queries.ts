@@ -81,6 +81,53 @@ export async function listAllAlvaras(
   return (data ?? []) as AlvaraWithCompany[];
 }
 
+export interface EffectiveAttachment {
+  path: string;
+  name: string;
+  size: number | null;
+  /** True when this attachment belongs to a *different* alvará, shared by município (see TLE). */
+  shared: boolean;
+}
+
+/**
+ * Resolves the attachment that should actually be shown/downloaded for an
+ * alvará: its own, if it has one -- otherwise, for a type marked
+ * `shared_attachment_by_municipality` (TLE and the like, where the same
+ * document covers every establishment in a município), the most recently
+ * uploaded attachment among sibling alvarás of the same type + município.
+ */
+export async function resolveEffectiveAttachment(
+  supabase: SupabaseClient,
+  alvara: {
+    id: string;
+    type_id: string;
+    municipality: string | null;
+    attachment_path: string | null;
+    attachment_name: string | null;
+    attachment_size: number | null;
+  },
+  typeSharedAttachment: boolean
+): Promise<EffectiveAttachment | null> {
+  if (alvara.attachment_path && alvara.attachment_name) {
+    return { path: alvara.attachment_path, name: alvara.attachment_name, size: alvara.attachment_size, shared: false };
+  }
+  if (!typeSharedAttachment || !alvara.municipality) return null;
+
+  const { data } = await supabase
+    .from("alvaras")
+    .select("attachment_path, attachment_name, attachment_size, attachment_uploaded_at")
+    .eq("type_id", alvara.type_id)
+    .ilike("municipality", alvara.municipality)
+    .not("attachment_path", "is", null)
+    .neq("id", alvara.id)
+    .order("attachment_uploaded_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.attachment_path || !data.attachment_name) return null;
+  return { path: data.attachment_path, name: data.attachment_name, size: data.attachment_size, shared: true };
+}
+
 export interface AlvaraStatusCounts {
   total: number;
   active: number;

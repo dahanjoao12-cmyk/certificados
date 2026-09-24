@@ -42,8 +42,8 @@ function renderCell(row: AlvaraWithCompany, key: string): React.ReactNode {
       return row.archived || row.days_remaining === null ? "-" : row.days_remaining;
     case "prioritario":
       return row.prioritario ? <span className="text-amber-600">★</span> : "-";
-    case "condicionantes":
-      return `${row.condicionantes_atendidas}/${row.condicionantes_total}`;
+    case "metragem_m2":
+      return row.metragem_m2 !== null ? `${row.metragem_m2} m²` : "-";
     case "municipality":
       return row.municipality ?? "-";
     case "uf":

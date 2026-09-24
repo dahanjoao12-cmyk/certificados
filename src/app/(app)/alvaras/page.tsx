@@ -10,7 +10,7 @@ import { AlvarasTable } from "@/components/alvaras/alvaras-table";
 import { Pagination } from "@/components/dashboard/pagination";
 import { ColumnPicker } from "@/components/dashboard/column-picker";
 import { AlvaraExportDialog } from "@/components/alvaras/export-dialog";
-import { NewAlvaraCompanyPicker } from "@/components/alvaras/new-alvara-company-picker";
+import { AlvarasCreateFlow } from "@/components/alvaras/alvaras-create-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ export default async function AlvarasPage({ searchParams }: { searchParams: Prom
           <h1 className="text-xl font-semibold text-slate-900">Alvarás</h1>
           <p className="text-sm text-slate-500">Controle de validade de alvarás e licenças municipais.</p>
         </div>
-        <NewAlvaraCompanyPicker />
+        <AlvarasCreateFlow types={types} />
       </div>
 
       <AlvaraStatusCards

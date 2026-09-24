@@ -236,6 +236,8 @@ export interface AlvaraType {
   id: string;
   name: string;
   color: string;
+  /** TLE and similar: the same attachment applies to every alvará of this type in a given município. */
+  shared_attachment_by_municipality: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -270,8 +272,7 @@ export interface Alvara {
   valid_to: string | null;
   prioritario: boolean;
   archived: boolean;
-  condicionantes_total: number;
-  condicionantes_atendidas: number;
+  metragem_m2: number | null;
   municipality: string | null;
   uf: string | null;
   notes: string | null;
@@ -295,6 +296,7 @@ export interface AlvaraWithCompany extends Alvara {
   days_remaining: number | null;
   type_name: string;
   type_color: string;
+  type_shared_attachment: boolean;
   company_code: string;
   company_document: string;
   company_document_type: DocumentType;

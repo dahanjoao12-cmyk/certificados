@@ -141,29 +141,17 @@ export function AlvaraForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="condicionantes_total">Condicionantes -- total</Label>
-          <Input
-            id="condicionantes_total"
-            name="condicionantes_total"
-            type="number"
-            min={0}
-            defaultValue={alvara?.condicionantes_total ?? 0}
-          />
-          <FieldError>{errors.condicionantes_total}</FieldError>
-        </div>
-        <div>
-          <Label htmlFor="condicionantes_atendidas">Condicionantes -- atendidas</Label>
-          <Input
-            id="condicionantes_atendidas"
-            name="condicionantes_atendidas"
-            type="number"
-            min={0}
-            defaultValue={alvara?.condicionantes_atendidas ?? 0}
-          />
-          <FieldError>{errors.condicionantes_atendidas}</FieldError>
-        </div>
+      <div>
+        <Label htmlFor="metragem_m2">Metragem em m²</Label>
+        <Input
+          id="metragem_m2"
+          name="metragem_m2"
+          type="number"
+          min={0}
+          step="0.01"
+          defaultValue={alvara?.metragem_m2 ?? ""}
+        />
+        <FieldError>{errors.metragem_m2}</FieldError>
       </div>
 
       <div>

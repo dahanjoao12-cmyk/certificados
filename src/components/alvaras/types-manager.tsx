@@ -27,6 +27,11 @@ export function AlvaraTypesManager({ types }: { types: AlvaraType[] }) {
             <div className="flex min-w-0 items-center gap-2">
               <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: type.color }} />
               <p className="truncate text-sm font-medium text-slate-900">{type.name}</p>
+              {type.shared_attachment_by_municipality && (
+                <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                  anexo por município
+                </span>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <button

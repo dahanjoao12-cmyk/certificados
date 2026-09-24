@@ -21,35 +21,18 @@ export const alvaraSchema = z
       .or(z.literal(""))
       .refine((value) => !value || value.length === 2, { message: "Use a sigla com 2 letras" }),
     notes: z.string().trim().optional().or(z.literal("")),
-    condicionantes_total: z
+    metragem_m2: z
       .string()
       .trim()
       .optional()
       .or(z.literal(""))
-      .refine((value) => !value || (Number.isInteger(Number(value)) && Number(value) >= 0), {
-        message: "Informe um número válido",
-      }),
-    condicionantes_atendidas: z
-      .string()
-      .trim()
-      .optional()
-      .or(z.literal(""))
-      .refine((value) => !value || (Number.isInteger(Number(value)) && Number(value) >= 0), {
+      .refine((value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0), {
         message: "Informe um número válido",
       }),
   })
   .superRefine((data, ctx) => {
     if (data.status_mode === "com_data" && !data.valid_to) {
       ctx.addIssue({ code: "custom", path: ["valid_to"], message: "Informe a data de vencimento" });
-    }
-    const total = Number(data.condicionantes_total || 0);
-    const atendidas = Number(data.condicionantes_atendidas || 0);
-    if (atendidas > total) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["condicionantes_atendidas"],
-        message: "Não pode ser maior que o total",
-      });
     }
   });
 
@@ -69,7 +52,6 @@ export function normalizeAlvaraInput(input: AlvaraFormInput) {
     municipality: input.municipality || null,
     uf: input.uf ? input.uf.toUpperCase() : null,
     notes: input.notes || null,
-    condicionantes_total: input.condicionantes_total ? Number(input.condicionantes_total) : 0,
-    condicionantes_atendidas: input.condicionantes_atendidas ? Number(input.condicionantes_atendidas) : 0,
+    metragem_m2: input.metragem_m2 ? Number(input.metragem_m2) : null,
   };
 }

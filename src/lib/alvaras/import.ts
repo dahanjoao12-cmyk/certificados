@@ -39,9 +39,11 @@ function parseBoolean(value: string | undefined): boolean {
   return normalized === "SIM" || normalized === "S" || normalized === "TRUE" || normalized === "1";
 }
 
-function parseCount(value: string | undefined): number {
-  const n = Number((value ?? "").trim());
-  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+function parseMetragem(value: string | undefined): number | null {
+  const trimmed = (value ?? "").trim().replace(",", ".");
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 /** "18/06/2026 14:31" -> "18/06/2026" -- Criado Em/Vencimento carregam hora, mas parseFlexibleDate só entende data. */
@@ -190,9 +192,6 @@ export async function processAlvaraImportRows(
       statusWarning = ` (status "${mapped.status}" não reconhecido, importado como Aguardando)`;
     }
 
-    const conditionsTotal = parseCount(mapped.condicionantes_total);
-    const conditionsMet = Math.min(parseCount(mapped.condicionantes_atendidas), conditionsTotal);
-
     const payload: Record<string, unknown> = {
       company_id: companyId,
       type_id: typeId,
@@ -202,8 +201,7 @@ export async function processAlvaraImportRows(
       valid_to: validTo,
       prioritario: parseBoolean(mapped.prioritario),
       archived: parseBoolean(mapped.arquivado),
-      condicionantes_total: conditionsTotal,
-      condicionantes_atendidas: conditionsMet,
+      metragem_m2: parseMetragem(mapped.metragem_m2),
       municipality: mapped.municipio || null,
       uf: mapped.uf ? mapped.uf.toUpperCase().slice(0, 2) : null,
       notes: mapped.lembretes || null,

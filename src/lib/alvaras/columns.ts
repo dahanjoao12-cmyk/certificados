@@ -12,7 +12,7 @@ export const ALVARA_COLUMNS: ColumnDef[] = [
   { key: "valid_to", label: "Vencimento" },
   { key: "days_remaining", label: "Dias restantes" },
   { key: "prioritario", label: "Prioritário" },
-  { key: "condicionantes", label: "Condicionantes" },
+  { key: "metragem_m2", label: "Metragem (m²)" },
   { key: "municipality", label: "Município" },
   { key: "uf", label: "UF" },
   { key: "notes", label: "Lembretes" },

@@ -52,6 +52,22 @@ export function AlvaraTypeForm({
         </div>
       </div>
 
+      <label className="flex items-start gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          name="shared_attachment_by_municipality"
+          defaultChecked={type?.shared_attachment_by_municipality}
+          className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300"
+        />
+        <span>
+          Anexo compartilhado por município (ex.: TLE)
+          <span className="block text-xs text-slate-500">
+            O primeiro anexo enviado num alvará deste tipo passa a valer para os demais alvarás do mesmo tipo no
+            mesmo município, até que um deles receba um anexo próprio.
+          </span>
+        </span>
+      </label>
+
       <Button type="submit" disabled={pending}>
         {pending ? "Salvando..." : "Salvar tipo"}
       </Button>
