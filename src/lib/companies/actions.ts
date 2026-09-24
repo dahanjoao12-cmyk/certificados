@@ -249,6 +249,7 @@ export async function createCompanyWithCertificate(
 
   revalidatePath("/clientes");
   revalidatePath("/");
+  revalidatePath("/certificados");
   redirect(`/clientes/${company.id}`);
 }
 

@@ -1,99 +1,81 @@
+import { FileCheck2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { parseCertificateFilters } from "@/lib/certificates/filters";
-import { getCertificateStatusCounts, listCertificates } from "@/lib/certificates/queries";
-import { CERTIFICATE_COLUMNS, CERTIFICATE_TABLE_KEY, resolveVisibleColumns } from "@/lib/certificates/columns";
-import { getTablePreference } from "@/lib/table-preferences/actions";
-import { getCertificateThresholds } from "@/lib/settings/thresholds";
-import { StatusCards } from "@/components/dashboard/status-cards";
-import { FiltersBar } from "@/components/dashboard/filters-bar";
-import { CertificatesTable } from "@/components/dashboard/certificates-table";
-import { Pagination } from "@/components/dashboard/pagination";
-import { ColumnPicker } from "@/components/dashboard/column-picker";
-import { ExportDialog } from "@/components/dashboard/export-dialog";
-import { NewCompanyModal } from "@/components/companies/new-company-modal";
+import { getCertificateStatusCounts } from "@/lib/certificates/queries";
+import { getCalendarRange, listCalendarItems, formatMonthLabel, type CalendarView } from "@/lib/certificates/calendar";
+import { listNotifications } from "@/lib/notifications/queries";
+import { ModuleCards, type ModuleCardDef } from "@/components/dashboard/module-cards";
+import { VencimentosCalendar } from "@/components/dashboard/vencimentos-calendar";
+import { DashboardNotificationsPanel } from "@/components/dashboard/dashboard-notifications-panel";
 
 export const dynamic = "force-dynamic";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
+function firstValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function Home({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
-  const filters = parseCertificateFilters(params);
+
+  const view: CalendarView = firstValue(params.view) === "week" ? "week" : "month";
+  const display = firstValue(params.display) === "list" ? "list" : "calendar";
+  const showOverdue = firstValue(params.showOverdue) !== "false";
+  const referenceDateParam = firstValue(params.date);
+  const referenceDate = referenceDateParam && !Number.isNaN(Date.parse(referenceDateParam))
+    ? new Date(`${referenceDateParam}T00:00:00`)
+    : new Date();
+
+  const range = getCalendarRange(view, referenceDate);
 
   const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  let visibleKeys: string[] | undefined;
-  const colsParam = params.cols;
-  if (typeof colsParam === "string" && colsParam.length > 0) {
-    visibleKeys = colsParam.split(",");
-  } else {
-    visibleKeys = (await getTablePreference(CERTIFICATE_TABLE_KEY)) ?? undefined;
-  }
-  const visibleColumns = resolveVisibleColumns(visibleKeys);
-
-  const [user, counts, { rows, total }, thresholds, { data: users }] = await Promise.all([
-    getCurrentUser(),
+  const [counts, calendarItems, notifications] = await Promise.all([
     getCertificateStatusCounts(supabase),
-    listCertificates(supabase, filters),
-    getCertificateThresholds(supabase),
-    supabase.from("profiles").select("id, full_name").eq("active", true).order("full_name"),
+    listCalendarItems(supabase, { from: range.from, to: range.to, includeOverdue: showOverdue }),
+    listNotifications(supabase, user.id),
   ]);
 
-  const currentQuery = new URLSearchParams(
-    Object.entries(params).flatMap(([key, value]) =>
-      value === undefined ? [] : Array.isArray(value) ? value.map((v) => [key, v] as [string, string]) : [[key, value] as [string, string]]
-    )
-  ).toString();
+  const moduleCards: ModuleCardDef[] = [
+    {
+      key: "certificados",
+      label: "Certificados Digitais",
+      value: counts.active,
+      icon: FileCheck2,
+      href: "/certificados",
+      colorClasses: "bg-blue-50 text-blue-600",
+    },
+  ];
+
+  const monthLabel = formatMonthLabel(view, referenceDate, range.from, range.to);
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Certificados Digitais</h1>
-          <p className="text-sm text-slate-500">Gerencie os certificados digitais dos clientes.</p>
-        </div>
-        <NewCompanyModal defaultWarningDays={thresholds.warning_days} users={users ?? []} />
+      <div>
+        <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
+        <p className="text-sm text-slate-500">Visão geral dos módulos e vencimentos, {user.profile.full_name}.</p>
       </div>
 
-      <StatusCards
-        counts={counts}
-        currentQuery={currentQuery}
-        activeStatus={filters.status}
-        activeArchived={params.archived as string | undefined}
-      />
+      <ModuleCards cards={moduleCards} />
 
-      <FiltersBar />
-
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">
-          {total.toLocaleString("pt-BR")} certificado(s) encontrado(s)
-        </p>
-        <div className="flex items-center gap-2">
-          <ColumnPicker
-            allColumns={CERTIFICATE_COLUMNS}
-            visibleKeys={visibleColumns.map((c) => c.key)}
-            tableKey={CERTIFICATE_TABLE_KEY}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <VencimentosCalendar
+            view={view}
+            referenceDate={referenceDate.toISOString().slice(0, 10)}
+            showOverdue={showOverdue}
+            display={display}
+            days={range.days.map((d) => d.toISOString().slice(0, 10))}
+            monthLabel={monthLabel}
+            items={calendarItems}
           />
-          <ExportDialog defaultVisibleColumns={visibleColumns.map((c) => c.key)} />
+        </div>
+        <div>
+          <DashboardNotificationsPanel items={notifications} />
         </div>
       </div>
-
-      <CertificatesTable
-        rows={rows}
-        columns={visibleColumns}
-        sort={filters.sort}
-        dir={filters.dir}
-        currentQuery={currentQuery}
-        isAdmin={user.profile.role === "admin"}
-        defaultWarningDays={thresholds.warning_days}
-      />
-
-      <Pagination page={filters.page} pageSize={filters.pageSize} total={total} currentQuery={currentQuery} />
     </div>
   );
 }

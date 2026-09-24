@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   FileCheck2,
   Building2,
   Building,
@@ -19,7 +20,8 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 const NAV_ITEMS: { href: string; label: string; icon: typeof FileCheck2; exact?: boolean }[] = [
-  { href: "/", label: "Certificados", icon: FileCheck2, exact: true },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/certificados", label: "Certificados", icon: FileCheck2 },
   { href: "/notificacoes", label: "Notificações", icon: Bell },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/importar", label: "Importar", icon: UploadCloud },

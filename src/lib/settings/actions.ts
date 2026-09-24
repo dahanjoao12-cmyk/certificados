@@ -60,6 +60,7 @@ export async function saveCertificateThresholds(
 
   revalidatePath("/configuracoes");
   revalidatePath("/");
+  revalidatePath("/certificados");
   return { success: true };
 }
 
