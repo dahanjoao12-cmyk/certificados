@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
+const DASHBOARD_ITEM = { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true } as const;
+
 const NAV_ITEMS: { href: string; label: string; icon: typeof FileCheck2; exact?: boolean }[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/painel-certificados", label: "Certificados", icon: FileCheck2 },
   { href: "/notificacoes", label: "Notificações", icon: Bell },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
@@ -69,6 +70,15 @@ export function Sidebar({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       <ul className="flex-1 space-y-0.5">
+        <li>
+          <NavLink
+            href={DASHBOARD_ITEM.href}
+            label={DASHBOARD_ITEM.label}
+            icon={DASHBOARD_ITEM.icon}
+            active={pathname === DASHBOARD_ITEM.href}
+          />
+        </li>
+
         <li>
           <button
             type="button"
