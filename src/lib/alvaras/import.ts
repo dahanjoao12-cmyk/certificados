@@ -22,7 +22,7 @@ export interface AlvaraImportSummary {
   rows: AlvaraImportRowOutcome[];
 }
 
-const MANUAL_STATUSES = new Set(["AGUARDANDO", "CGSIM"]);
+const MANUAL_STATUSES = new Set(["AGUARDANDO", "CGSIM", "TERCEIROS"]);
 const TYPE_COLOR_PALETTE = ["#2563eb", "#d97706", "#059669", "#7c3aed", "#db2777", "#0891b2"];
 
 function normalizeLabel(value: string): string {
@@ -177,7 +177,7 @@ export async function processAlvaraImportRows(
     let issued = false;
     let isPermanent = false;
     let validTo: string | null = null;
-    let manualStatus: "AGUARDANDO" | "CGSIM" = "AGUARDANDO";
+    let manualStatus: "AGUARDANDO" | "CGSIM" | "TERCEIROS" = "AGUARDANDO";
     let statusWarning = "";
 
     if (vencimento) {
@@ -187,7 +187,7 @@ export async function processAlvaraImportRows(
       issued = true;
       isPermanent = true;
     } else if (MANUAL_STATUSES.has(statusText)) {
-      manualStatus = statusText as "AGUARDANDO" | "CGSIM";
+      manualStatus = statusText as "AGUARDANDO" | "CGSIM" | "TERCEIROS";
     } else if (statusText) {
       statusWarning = ` (status "${mapped.status}" não reconhecido, importado como Aguardando)`;
     }
@@ -199,6 +199,7 @@ export async function processAlvaraImportRows(
       issued,
       is_permanent: isPermanent,
       valid_to: validTo,
+      issued_at: issued && mapped.emitido_em ? parseFlexibleDate(dateOnly(mapped.emitido_em)) : null,
       prioritario: parseBoolean(mapped.prioritario),
       archived: parseBoolean(mapped.arquivado),
       metragem_m2: parseMetragem(mapped.metragem_m2),

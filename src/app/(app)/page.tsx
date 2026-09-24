@@ -5,7 +5,7 @@ import { getCertificateStatusCounts } from "@/lib/certificates/queries";
 import { getCalendarRange, listCalendarItems, formatMonthLabel, type CalendarView } from "@/lib/certificates/calendar";
 import { getAlvaraStatusCounts } from "@/lib/alvaras/queries";
 import { listAlvaraCalendarItems } from "@/lib/alvaras/calendar-items";
-import { listNotifications } from "@/lib/notifications/queries";
+import { listCombinedNotifications } from "@/lib/notifications/combined";
 import { ModuleCards, type ModuleCardDef } from "@/components/dashboard/module-cards";
 import { VencimentosCalendar } from "@/components/dashboard/vencimentos-calendar";
 import { DashboardNotificationsPanel } from "@/components/dashboard/dashboard-notifications-panel";
@@ -39,7 +39,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Sea
     getAlvaraStatusCounts(supabase),
     listCalendarItems(supabase, { from: range.from, to: range.to, includeOverdue: showOverdue }),
     listAlvaraCalendarItems(supabase, { from: range.from, to: range.to, includeOverdue: showOverdue }),
-    listNotifications(supabase, user.id),
+    listCombinedNotifications(supabase, user.id),
   ]);
   const calendarItems = [...certificateCalendarItems, ...alvaraCalendarItems];
 

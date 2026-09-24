@@ -2,24 +2,47 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { BellOff } from "lucide-react";
+import { BellOff, Download } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { StatusBadge } from "@/components/certificates/status-badge";
-import { markNotificationRead, markAllNotificationsRead } from "@/lib/notifications/actions";
-import type { NotificationItem } from "@/lib/notifications/queries";
+import { markNotificationRead, markAllNotificationsRead, markActivityNotificationRead, markAllActivityNotificationsRead } from "@/lib/notifications/actions";
+import { withBasePath } from "@/lib/utils/base-path";
+import type { CombinedNotification } from "@/lib/notifications/combined";
 
 function formatDate(value: string): string {
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
 }
 
-export function DashboardNotificationsPanel({ items }: { items: NotificationItem[] }) {
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const hours = Math.round(diffMs / 3_600_000);
+  if (hours < 1) return "há poucos minutos";
+  if (hours < 24) return `há cerca de ${hours}h`;
+  const days = Math.round(hours / 24);
+  return `há ${days} dia${days === 1 ? "" : "s"}`;
+}
+
+export function DashboardNotificationsPanel({ items }: { items: CombinedNotification[] }) {
   const [tab, setTab] = useState<"unread" | "read">("unread");
   const [isPending, startTransition] = useTransition();
 
   const unread = items.filter((item) => !item.isRead);
   const read = items.filter((item) => item.isRead);
   const visible = tab === "unread" ? unread : read;
+
+  function markItemRead(item: CombinedNotification) {
+    if (item.kind === "due") startTransition(() => markNotificationRead(item.due.certificate.id));
+    else startTransition(() => markActivityNotificationRead(item.activity.id));
+  }
+
+  function markAllRead() {
+    const dueIds = unread.filter((i) => i.kind === "due").map((i) => i.due.certificate.id);
+    const activityIds = unread.filter((i) => i.kind === "activity").map((i) => i.activity.id);
+    startTransition(async () => {
+      await Promise.all([markAllNotificationsRead(dueIds), markAllActivityNotificationsRead(activityIds)]);
+    });
+  }
 
   return (
     <div className="flex h-full flex-col rounded-lg border border-slate-200 bg-white">
@@ -50,7 +73,7 @@ export function DashboardNotificationsPanel({ items }: { items: NotificationItem
           <button
             type="button"
             disabled={isPending}
-            onClick={() => startTransition(() => markAllNotificationsRead(unread.map((item) => item.certificate.id)))}
+            onClick={markAllRead}
             className="text-xs font-medium text-slate-500 hover:text-slate-900"
           >
             Marcar todas como lidas
@@ -68,27 +91,64 @@ export function DashboardNotificationsPanel({ items }: { items: NotificationItem
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {visible.map(({ certificate, isRead }) => (
-              <div key={certificate.id} className="flex items-center justify-between gap-2 px-4 py-3">
-                <Link href={`/clientes/${certificate.company_id}`} className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{certificate.company_corporate_name}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-                    Vence {formatDate(certificate.valid_to)}
-                    <StatusBadge status={certificate.status} />
-                  </p>
-                </Link>
-                {!isRead && (
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => startTransition(() => markNotificationRead(certificate.id))}
-                    className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                  >
-                    Marcar como lida
-                  </button>
-                )}
-              </div>
-            ))}
+            {visible.map((item) =>
+              item.kind === "due" ? (
+                <div key={item.id} className="flex items-center justify-between gap-2 px-4 py-3">
+                  <Link href={`/clientes/${item.due.certificate.company_id}`} className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {item.due.certificate.company_corporate_name}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                      Vence {formatDate(item.due.certificate.valid_to)}
+                      <StatusBadge status={item.due.certificate.status} />
+                    </p>
+                  </Link>
+                  {!item.isRead && (
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => markItemRead(item)}
+                      className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Marcar como lida
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div key={item.id} className="flex items-start gap-3 px-4 py-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                    <Download size={15} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900">{item.activity.title}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{item.activity.message}</p>
+                    <div className="mt-1 flex items-center gap-3">
+                      {item.activity.action_path && (
+                        <a
+                          href={withBasePath(`/api/notifications/${item.activity.id}/download`)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                        >
+                          {item.activity.action_label ?? "Baixar"}
+                        </a>
+                      )}
+                      <span className="text-xs text-slate-400">{timeAgo(item.activity.created_at)}</span>
+                      {!item.isRead && (
+                        <button
+                          type="button"
+                          disabled={isPending}
+                          onClick={() => markItemRead(item)}
+                          className="text-xs font-medium text-slate-500 hover:text-slate-900"
+                        >
+                          Marcar como lida
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         )}
       </div>

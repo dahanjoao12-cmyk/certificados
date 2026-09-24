@@ -36,6 +36,8 @@ function renderCell(row: AlvaraWithCompany, key: string): React.ReactNode {
       );
     case "status":
       return <AlvaraStatusBadge status={row.status} />;
+    case "issued_at":
+      return formatDate(row.issued_at);
     case "valid_to":
       return formatDate(row.valid_to);
     case "days_remaining":

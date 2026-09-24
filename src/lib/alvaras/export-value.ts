@@ -21,6 +21,8 @@ export function getAlvaraExportValue(row: AlvaraWithCompany, key: string): Expor
       return { value: row.type_name };
     case "status":
       return { value: ALVARA_STATUS_LABELS[row.status] ?? row.status };
+    case "issued_at":
+      return { value: toDate(row.issued_at), isDate: true };
     case "valid_to":
       return { value: toDate(row.valid_to), isDate: true };
     case "days_remaining":
@@ -56,6 +58,7 @@ export const EXPORTABLE_ALVARA_COLUMNS: { key: string; label: string }[] = [
   { key: "company_corporate_name", label: "Cliente" },
   { key: "type_name", label: "Tipo" },
   { key: "status", label: "Status" },
+  { key: "issued_at", label: "Data de emissão" },
   { key: "valid_to", label: "Vencimento" },
   { key: "days_remaining", label: "Dias restantes" },
   { key: "prioritario", label: "Prioritário" },

@@ -29,6 +29,7 @@ function parseForm(formData: FormData) {
     status_mode: field(formData, "status_mode"),
     manual_status: field(formData, "manual_status"),
     valid_to: field(formData, "valid_to"),
+    issued_at: field(formData, "issued_at"),
     prioritario: formData.get("prioritario") === "on",
     municipality: field(formData, "municipality"),
     uf: field(formData, "uf"),

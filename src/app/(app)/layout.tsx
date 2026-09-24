@@ -1,13 +1,13 @@
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
-import { listNotifications } from "@/lib/notifications/queries";
+import { listCombinedNotifications } from "@/lib/notifications/combined";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   const supabase = await createClient();
-  const notifications = await listNotifications(supabase, user.id);
+  const notifications = await listCombinedNotifications(supabase, user.id);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">

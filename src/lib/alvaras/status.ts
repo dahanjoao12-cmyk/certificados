@@ -9,7 +9,7 @@ import type { AlvaraStatus } from "@/lib/types/database";
 export function computeAlvaraStatus(params: {
   issued: boolean;
   isPermanent: boolean;
-  manualStatus: "AGUARDANDO" | "CGSIM";
+  manualStatus: "AGUARDANDO" | "CGSIM" | "TERCEIROS";
   validTo: string | Date | null;
   archived: boolean;
   warningDays: number;
@@ -47,6 +47,7 @@ function startOfDay(value: string | Date): Date {
 export const ALVARA_STATUS_LABELS: Record<AlvaraStatus, string> = {
   AGUARDANDO: "Aguardando",
   CGSIM: "CGSIM",
+  TERCEIROS: "Terceiros",
   EM_DIA: "Em dia",
   VENCENDO: "Vencendo",
   VENCE_HOJE: "Vence hoje",
@@ -58,6 +59,7 @@ export const ALVARA_STATUS_LABELS: Record<AlvaraStatus, string> = {
 export const ALVARA_STATUS_BADGE_CLASSES: Record<AlvaraStatus, string> = {
   AGUARDANDO: "bg-slate-100 text-slate-600 ring-slate-500/20",
   CGSIM: "bg-purple-50 text-purple-700 ring-purple-600/20",
+  TERCEIROS: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
   EM_DIA: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
   VENCENDO: "bg-amber-50 text-amber-700 ring-amber-600/20",
   VENCE_HOJE: "bg-orange-50 text-orange-700 ring-orange-600/20",

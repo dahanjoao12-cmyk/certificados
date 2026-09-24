@@ -241,17 +241,27 @@ export function NewAlvaraModal({
             <Select id="manual_status" name="manual_status" defaultValue="AGUARDANDO">
               <option value="AGUARDANDO">Aguardando</option>
               <option value="CGSIM">CGSIM</option>
+              <option value="TERCEIROS">Terceiros</option>
             </Select>
           </div>
         )}
 
-        {statusMode === "com_data" && (
-          <div>
-            <Label htmlFor="valid_to" required>
-              Vencimento
-            </Label>
-            <Input id="valid_to" name="valid_to" type="date" />
-            <FieldError>{errors.valid_to}</FieldError>
+        {(statusMode === "com_data" || statusMode === "definitivo") && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="issued_at">Data de emissão</Label>
+              <Input id="issued_at" name="issued_at" type="date" />
+              <FieldError>{errors.issued_at}</FieldError>
+            </div>
+            {statusMode === "com_data" && (
+              <div>
+                <Label htmlFor="valid_to" required>
+                  Vencimento
+                </Label>
+                <Input id="valid_to" name="valid_to" type="date" />
+                <FieldError>{errors.valid_to}</FieldError>
+              </div>
+            )}
           </div>
         )}
 

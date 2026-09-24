@@ -243,7 +243,7 @@ export interface AlvaraType {
 }
 
 /** Manual pre-issuance states -- no `valid_to` yet. */
-export type AlvaraManualStatus = "AGUARDANDO" | "CGSIM";
+export type AlvaraManualStatus = "AGUARDANDO" | "CGSIM" | "TERCEIROS";
 
 /**
  * Full status union: the two manual pre-issuance states, "DEFINITIVO" (issued,
@@ -270,6 +270,8 @@ export interface Alvara {
   issued: boolean;
   is_permanent: boolean;
   valid_to: string | null;
+  /** When the alvará was actually issued -- distinct from valid_to (its expiration). Only meaningful once `issued`. */
+  issued_at: string | null;
   prioritario: boolean;
   archived: boolean;
   metragem_m2: number | null;

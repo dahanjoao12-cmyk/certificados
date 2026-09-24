@@ -9,6 +9,7 @@ export const ALVARA_COLUMNS: ColumnDef[] = [
   { key: "company_corporate_name", label: "Cliente" },
   { key: "type_name", label: "Tipo" },
   { key: "status", label: "Status" },
+  { key: "issued_at", label: "Data de emissão" },
   { key: "valid_to", label: "Vencimento" },
   { key: "days_remaining", label: "Dias restantes" },
   { key: "prioritario", label: "Prioritário" },

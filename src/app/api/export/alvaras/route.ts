@@ -6,6 +6,7 @@ import { EXPORTABLE_ALVARA_COLUMNS, getAlvaraExportValue } from "@/lib/alvaras/e
 import { buildXlsx } from "@/lib/export/xlsx";
 import { buildCsv } from "@/lib/export/csv";
 import { logAudit } from "@/lib/audit/log";
+import { notifyExportReady } from "@/lib/notifications/export-ready";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -44,6 +45,12 @@ export async function POST(request: NextRequest) {
 
   if (format === "csv") {
     const csv = buildCsv(columns, cellRows);
+    await notifyExportReady(supabase, {
+      userId: user.id,
+      fileName: `${fileName}.csv`,
+      body: csv,
+      contentType: "text/csv; charset=utf-8",
+    });
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -53,6 +60,12 @@ export async function POST(request: NextRequest) {
   }
 
   const buffer = await buildXlsx(columns, cellRows);
+  await notifyExportReady(supabase, {
+    userId: user.id,
+    fileName: `${fileName}.xlsx`,
+    body: buffer,
+    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

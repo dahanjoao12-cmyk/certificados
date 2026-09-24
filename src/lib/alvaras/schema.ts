@@ -10,8 +10,9 @@ export const alvaraSchema = z
   .object({
     type_id: z.string().trim().min(1, "Selecione o tipo de alvará"),
     status_mode: z.enum(["pendente", "definitivo", "com_data"]),
-    manual_status: z.enum(["AGUARDANDO", "CGSIM"]).optional().or(z.literal("")),
+    manual_status: z.enum(["AGUARDANDO", "CGSIM", "TERCEIROS"]).optional().or(z.literal("")),
     valid_to: z.string().trim().optional().or(z.literal("")),
+    issued_at: z.string().trim().optional().or(z.literal("")),
     prioritario: z.boolean(),
     municipality: z.string().trim().optional().or(z.literal("")),
     uf: z
@@ -48,6 +49,7 @@ export function normalizeAlvaraInput(input: AlvaraFormInput) {
     issued,
     is_permanent: isPermanent,
     valid_to: input.status_mode === "com_data" ? input.valid_to || null : null,
+    issued_at: issued ? input.issued_at || null : null,
     prioritario: input.prioritario,
     municipality: input.municipality || null,
     uf: input.uf ? input.uf.toUpperCase() : null,
